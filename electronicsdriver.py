@@ -4,7 +4,7 @@ import select
 from adafruit_servokit import ServoKit
 
 #MODE ====================================================================================
-MODE = 1
+MODE = 0
 #=========================================================================================
 """
 rover standards
@@ -42,7 +42,22 @@ kit = ServoKit(channels=16)
 def servo_angle(spd):
     kit.servo[0].angle = float(spd)*80 + 90
     
-
+def updateServos():
+    kit.servo[0].angle = float("w1")
+    kit.servo[1].angle = float("w2")
+    kit.servo[2].angle = float("w3")
+    kit.servo[3].angle = float("w4")
+    kit.servo[4].angle = float("w5")
+    kit.servo[5].angle = float("w6")
+    kit.servo[6].angle = float("g1")
+    kit.servo[7].angle = float("g2")
+    kit.servo[8].angle = float("g3")
+    kit.servo[9].angle = float("g4")
+    kit.servo[10].angle = float("g5")
+    kit.servo[11].angle = float("g6")
+    kit.servo[12].angle = float("a1")
+    kit.servo[13].angle = float("a2")
+    kit.servo[14].angle = float("a3")
 
 class driver:
     def __init__(self, mode):
@@ -92,6 +107,7 @@ class driver:
                 if msg and msg != b'1':
                     speeds = self.convert_msg(msg)
                     self.update(speeds)
+                    self.updateServos()
                     
                 
                     
