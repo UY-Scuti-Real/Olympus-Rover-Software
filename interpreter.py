@@ -33,7 +33,9 @@ rotation #4
 if the rover has debug LEDs/sounds, should be presented as
 on, output number respectively
 
-"""    
+"""
+python_scarey = "hello, I am very scarey"
+
 def gimbal_drive(x, y, sensitivity=1):
     speeds = {}
     gimbals = {}
@@ -122,6 +124,7 @@ class rover_arm:
     def __init__(self):
         self.L1 = 10        #cm
         self.L2 = 10        #cm
+        self.L3_check = self.L1**2 + self.L2**2
         self.theta1 = 0.01  #IN FUCKING DEGREES
         self.theta2 = 0.01  #DEGREES
 
@@ -131,34 +134,33 @@ class rover_arm:
         if theta1 > 180:
             self.theta1 = 180
         elif theta1 < 0:
-            self.theta1 = 0
+            self.theta1 = 1
         else:
             self.theta1 = theta1
+        print("cos t2\t{} \tt2 {:.0f} \t t1 {:.3f}".format("!", self.theta2, self.theta1))
         return {"a1":self.theta1}
 
     def extend_arm(self, length):
         L3init = self.get_L3()
-        T1primeinit = self.get_T1prime(L3init)
         L3new = L3init + length
-        if L3new >= self.L1 + self.L2:
-            L3new = (self.L1 + self.L2)*0.99
-        theta2 = self.get_T2_from_L3(L3new)
-        if theta2 > 180:
-            self.theta2 = 179
-        elif theta2 < 0:
-            self.theta2 = 1
+        if L3new < L3init and self.theta1 >= 179:
+            print("your genius fix worked as always mr high IQ rick and morty watcher")
+            theta2 = self.get_T2_from_L3(L3new)
+            self.theta2 = self.validate_angle(theta2)
         else:
-            self.theta2 = theta2
-		
-        T1primenew = self.get_T1prime(L3new)
-        theta1 = self.theta1 - (T1primenew-T1primeinit)
-        if theta1 > 180:
-            self.theta1 = 179
-        elif theta1 < 0:
-            self.theta1 = 1
-        else:
-            self.theta1 = theta1
-        print("a1", self.theta1, "a2", self.theta2)
+            T1primeinit = self.get_T1prime(L3init)
+            if L3new >= self.L1 + self.L2:
+                L3new = (self.L1 + self.L2)*0.99
+            theta2 = self.get_T2_from_L3(L3new)
+            if theta2 > 180:
+                self.theta2 = 179
+            elif theta2 < 0:
+                self.theta2 = 1
+            else:
+                self.theta2 = theta2
+            T1primenew = self.get_T1prime(L3new)
+            self.theta1 = self.validate_angle(self.theta1 - (T1primenew-T1primeinit))
+            #print("a1", self.theta1, "a2", self.theta2)
         return{"a1":self.theta1, "a2":self.theta2}
     
     def get_L3(self):
@@ -168,12 +170,24 @@ class rover_arm:
     def get_T2_from_L3(self, L3):
         cosT2 = (L3**2 - self.L1**2 - self.L2**2)/(-2*self.L1*self.L2)
         #print(cosT2)
-        return deg(m.acos(cosT2))
+        T2 = deg(m.acos(cosT2))
+        print("cos t2\t{:.3f} \tt2 {:.0f} \t t1 {:.3f}".format(cosT2, T2, self.theta1))
+        return T2
 
     def get_T1prime(self, L3):
-        sinT1diff = self.L1/L3 * m.sin(rad(self.theta2))    
-        T1diff = deg(m.asin(sinT1diff))
+        sinT1diff = self.L1/L3 * m.sin(rad(self.theta2))
+        #might be self.l2 there instead...
+        T1diff = deg(m.asin(abs(sinT1diff)))
+        #print(sinT1diff, T1diff)
         return self.theta1 - T1diff
+
+
+    def validate_angle(self, angle):
+        if angle >= 180:
+            angle = 179
+        elif angle <= 0:
+            angle = 1
+        return angle
         
         
         
