@@ -4,7 +4,7 @@ import select
 from adafruit_servokit import ServoKit
 
 #MODE ====================================================================================
-MODE = 0
+MODE = 1
 #=========================================================================================
 """
 rover standards
@@ -40,30 +40,134 @@ on, output number respectively
 kit = ServoKit(channels=16)
 
 def servo_angle(spd):
-    kit.servo[0].angle = float(spd)*80 + 90
-    
-def updateServos():
-    kit.servo[0].angle = float("w1")
-    kit.servo[1].angle = float("w2")
-    kit.servo[2].angle = float("w3")
-    kit.servo[3].angle = float("w4")
-    kit.servo[4].angle = float("w5")
-    kit.servo[5].angle = float("w6")
-    kit.servo[6].angle = float("g1")
-    kit.servo[7].angle = float("g2")
-    kit.servo[8].angle = float("g3")
-    kit.servo[9].angle = float("g4")
-    kit.servo[10].angle = float("g5")
-    kit.servo[11].angle = float("g6")
-    kit.servo[12].angle = float("a1")
-    kit.servo[13].angle = float("a2")
-    kit.servo[14].angle = float("a3")
+    try:
+        angle = float(spd)*80 + 90
+        kit.servo[0].angle = angle
+        #print("angle should be ", angle)
+    except Exception as e:
+        print("But that's wrong, you fucking retard: ", e, spd)
+
+
+def debug_cmd(msg):
+    pass
+
+
+def wheel1(spd):
+    try:
+        angle = -float(spd)
+        kit.continuous_servo[0].throttle = angle
+        #print("angle should be ", angle)
+    except Exception as e:
+        print("wheel1: ", e, spd)
+
+def wheel2(spd):
+    try:
+        angle = float(spd)
+        kit.continuous_servo[1].throttle = angle
+        #print("angle should be ", angle)
+    except Exception as e:
+        print("wheel2: ", e, spd)
+
+
+def wheel3(spd):
+    try:
+        angle = -float(spd)
+        kit.continuous_servo[2].throttle = angle
+        #print("angle should be ", angle)
+    except Exception as e:
+        print("wheel3: ", e, spd)
+
+
+def wheel4(spd):
+    try:
+        angle = float(spd)
+        kit.continuous_servo[3].throttle = angle
+        #print("angle should be ", angle)
+    except Exception as e:
+        print("wheel4: ", e, spd)
+
+
+def wheel5(spd):
+    try:
+        angle = -float(spd)
+        kit.continuous_servo[4].throttle = angle
+        #print("angle should be ", angle)
+    except Exception as e:
+        print("wheel5: ", e, spd)
+
+
+def wheel6(spd):
+    try:
+        angle = float(spd)
+        kit.continuous_servo[5].throttle = angle
+        #print("angle should be ", angle)
+    except Exception as e:
+        print("wheel6: ", e, spd)
+
+
+def gimbal1(spd):
+    try:
+        angle = float(spd)*90+90
+        kit.servo[6].angle = angle
+        #print("angle should be ", angle)
+    except Exception as e:
+        print("gimbal1: ", e, spd)
+
+
+def gimbal2(spd):
+    try:
+        angle = float(spd)*90+90
+        kit.servo[7].angle = angle
+        #print("angle should be ", angle)
+    except Exception as e:
+        print("gimbal2: ", e, spd)
+
+
+def gimbal3(spd):
+    try:
+        angle = float(spd)*90+90
+        kit.servo[8].angle = angle
+        #print("angle should be ", angle)
+    except Exception as e:
+        print("gimbal3: ", e, spd)
+
+
+def gimbal4(spd):
+    try:
+        angle = float(spd)*90+90
+        kit.servo[9].angle = angle
+        #print("angle should be ", angle)
+    except Exception as e:
+        print("gimbal4: ", e, spd)
+
+
+def shoulder(spd):
+    try:
+        kit.servo[10].angle = float(spd)
+        #print("shoulder", spd, end = '')
+    except Exception as e:
+        print("But that's wrong, you fucking shoulder: ", e, spd)
+
+def elbow(spd):
+    try:
+        kit.servo[11].angle = float(spd)
+        #print("\t elbow", spd, "\n", end = '\n')
+    except Exception as e:
+        print("But that's wrong, you fucking elbow: ", e, spd)
+
+
+def grabber(spd):
+    try:
+        kit.servo[12].angle = float(spd)
+    except Exception as e:
+        print("But that's wrong, you fucking grabber: ", e, spd)
+
 
 class driver:
     def __init__(self, mode):
         self.command_sock = s.socket(s.AF_INET, s.SOCK_STREAM)
-        #self.command_sock.setsockopt(s.SO_SOCK, s.SO_REUSEADDR, 1)
-        #self.command_sock.setsockopt(s.SO_SOCK, s.SO_REUSEPORT, 1)
+        self.command_sock.setsockopt(s.SOL_SOCKET, s.SO_REUSEADDR, 1)
+        self.command_sock.setsockopt(s.SOL_SOCKET, s.SO_REUSEPORT, 1)
         self.command_sock.bind(("192.168.1.10", 5000))
         self.command_sock.listen(2048)
         if mode == 0:
@@ -84,21 +188,21 @@ class driver:
                         "a3":print,
                         }
         if mode == 1:
-            self.map = {"w1":servo_angle,
-                        "w2":print,
-                        "w3":print,
-                        "w4":print,
-                        "w5":print,
-                        "w6":print,
-                        "g1":print,
-                        "g2":print,
-                        "g3":print,
-                        "g4":print,
-                        "g5":print,
-                        "g6":print,
-                        "a1":print,
-                        "a2":print,
-                        "a3":print,
+            self.map = {"w1":wheel1,
+                        "w2":wheel2,
+                        "w3":wheel3,
+                        "w4":wheel4,
+                        "w5":wheel5,
+                        "w6":wheel6,
+                        "g1":gimbal1,
+                        "g2":gimbal2,
+                        "g3":gimbal3,
+                        "g4":gimbal4,
+                        "g5":debug_cmd,
+                        "g6":debug_cmd,
+                        "a1":shoulder,
+                        "a2":elbow,
+                        "a3":grabber,
                         }
         while 1:
             self.aquire_conn()
@@ -107,7 +211,6 @@ class driver:
                 if msg and msg != b'1':
                     speeds = self.convert_msg(msg)
                     self.update(speeds)
-                    self.updateServos()
                     
                 
                     
@@ -152,10 +255,15 @@ class driver:
 
     def update(self, speeds):
         #this feels very wrong
-        print(speeds)
         if speeds is not None:
             for speed in speeds:
-                self.map[speed](speeds[speed]) 
+                if speed in self.map:
+                    self.map[speed](speeds[speed])
+##            if "a1" in speeds:
+##                print("a1 ",speeds["a1"])
+##            if "a2" in speeds:
+##                print("a2", speeds["a2"])
+            #print(speeds)
 
 print("Starting driver")
 drive = driver(MODE)
