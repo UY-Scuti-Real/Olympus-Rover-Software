@@ -227,7 +227,7 @@ class controller_state:
             self.status[key] = float(dictforminput[key])
             if key == "BTN_NORTH":
                 self.drive_mode = toggle(self.drive_mode)
-            elif key == "BTN_WEST" and dictforminput[key] == 1:
+            elif key == "BTN_WEST":
                 self.grabber = toggle(self.grabber)
             elif key == "BTN_TR":
                 # print("TOGGLED ARM MODE")
