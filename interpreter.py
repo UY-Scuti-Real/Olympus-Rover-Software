@@ -25,8 +25,10 @@ gn is the gimbal codon
 as far as the rover arm goes...
 an, you know the dril it's the same as before
 
->#--#--#
- 3  2  1
+grab#--#--#
+    3  2  1
+	
+rotation #4
 
 if the rover has debug LEDs/sounds, should be presented as
 on, output number respectively
@@ -124,7 +126,14 @@ class rover_arm:
         self.theta2 = 0.01  #DEGREES
 
     def rotate_arm(self, angle):
-        self.theta1 += angle
+        theta1 = self.theta1
+        theta1 += angle
+        if theta1 > 180:
+            self.theta1 = 180
+        elif theta1 < 0:
+            self.theta1 = 0
+        else:
+            self.theta1 = theta1
         return {"a1":self.theta1}
 
     def extend_arm(self, length):
@@ -133,11 +142,23 @@ class rover_arm:
         L3new = L3init + length
         if L3new >= self.L1 + self.L2:
             L3new = (self.L1 + self.L2)*0.99
-        self.theta2 = self.get_T2_from_L3(L3new)
-        
+        theta2 = self.get_T2_from_L3(L3new)
+        if theta2 > 180:
+            self.theta2 = 179
+        elif theta2 < 0:
+            self.theta2 = 1
+        else:
+            self.theta2 = theta2
+		
         T1primenew = self.get_T1prime(L3new)
-        self.theta1 -= (T1primenew-T1primeinit)
-            
+        theta1 = self.theta1 - (T1primenew-T1primeinit)
+        if theta1 > 180:
+            self.theta1 = 179
+        elif theta1 < 0:
+            self.theta1 = 1
+        else:
+            self.theta1 = theta1
+        print("a1", self.theta1, "a2", self.theta2)
         return{"a1":self.theta1, "a2":self.theta2}
     
     def get_L3(self):
@@ -150,7 +171,7 @@ class rover_arm:
         return deg(m.acos(cosT2))
 
     def get_T1prime(self, L3):
-        sinT1diff = self.L1/L3 * m.sin(rad(self.theta2))
+        sinT1diff = self.L1/L3 * m.sin(rad(self.theta2))    
         T1diff = deg(m.asin(sinT1diff))
         return self.theta1 - T1diff
         
