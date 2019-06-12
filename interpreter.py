@@ -27,14 +27,16 @@ an, you know the dril it's the same as before
 
 grab#--#--#
     3  2  1
-	
+
 rotation #4
 
 if the rover has debug LEDs/sounds, should be presented as
 on, output number respectively
 
 """
-python_scarey = "hello, I am very scarey"
+MODE = "DBW"
+# MODE = 0
+# MODE = 1
 
 def gimbal_drive(x, y, sensitivity=1):
     speeds = {}
@@ -53,8 +55,8 @@ def differential_drive(x, y, sensitivity=1):
     speeds = {
         "w1":y + x,
         "w2":y - x,
-        "w3":y + x, 
-        "w4":y - x, 
+        "w3":y + x,
+        "w4":y - x,
         "w5":y + x,
         "w6":y - x
         }
@@ -91,7 +93,7 @@ def transmit(driver_sock, speeds):
             postfiltered_string += char
     #print("sending:", postfiltered_string)
     driver_sock.send(postfiltered_string.encode())
-    
+
     pass
 #ROVER DRIVE==============================================================================
 class rover_drive:
@@ -128,6 +130,17 @@ class rover_arm:
         self.theta1 = 0.01  #IN FUCKING DEGREES
         self.theta2 = 0.01  #DEGREES
 
+
+    def inc_theta1(self, angle):
+        self.theta1 = self.validate_angle(self.theta1 + angle)
+        return {"a1":self.theta1}
+
+
+    def inc_theta2(self, angle):
+        self.theta2 = self.validate_angle(self.theta2 + angle)
+        return {"a2": self.theta2}
+
+
     def rotate_arm(self, angle):
         theta1 = self.theta1
         theta1 += angle
@@ -162,7 +175,7 @@ class rover_arm:
             self.theta1 = self.validate_angle(self.theta1 - (T1primenew-T1primeinit))
             #print("a1", self.theta1, "a2", self.theta2)
         return{"a1":self.theta1, "a2":self.theta2}
-    
+
     def get_L3(self):
         L3squared = self.L1**2 + self.L2**2 - 2*self.L1*self.L2*m.cos(rad(self.theta2))
         return L3squared**0.5
@@ -188,9 +201,9 @@ class rover_arm:
         elif angle <= 0:
             angle = 1
         return angle
-        
-        
-        
+
+
+
 #CONTROLLER===============================================================================
 class controller_state:
     def __init__(self):
@@ -207,7 +220,7 @@ class controller_state:
         self.yeet = False
         self.arm_deploy = True
         self.fudge_angle = 10
-        self.fudge_length = 10
+        self.fudge_length = 1
 
     def input_switcher(self, dictforminput):
         for key in dictforminput:
@@ -236,19 +249,24 @@ class controller_state:
         else:
             speeds.update(differential_drive(
                 self.status["ABS_X"], self.status["ABS_Y"], self.sensitivity))
-        if self.arm_mode:
-            #print("Extending arm")
-            speeds.update(arm.extend_arm(self.fudge_length*self.sensitivity*self.status["ABS_RY"]))
-        else:
-            #print("rotating arm")
-            speeds.update(arm.rotate_arm(self.fudge_angle*self.sensitivity*self.status["ABS_RY"]))
-        
+        if MODE == 0:
+            if self.arm_mode:
+                #print("Extending arm")
+                speeds.update(arm.extend_arm(self.fudge_length*self.sensitivity*self.status["ABS_RY"]))
+            else:
+                #print("rotating arm")
+                speeds.update(arm.rotate_arm(self.fudge_angle*self.sensitivity*self.status["ABS_RY"]))
+        elif MODE == "DBW":
+            if self.arm_mode:
+                speeds.update(arm.inc_theta2(self.fudge_angle*self.sensitivity*self.status["ABS_RY"]))
+            else:
+                speeds.update(arm.inc_theta1(self.fudge_angle*self.sensitivity*self.status["ABS_RY"]))
+
         return speeds
 
 
-            
-#MAIN=====================================================================================    
-run = 1
+
+#MAIN=====================================================================================
 print("===INTERPRETER START===")
 print("creating sockets & classes... ", end = '')
 cont_local_sock = s.socket(s.AF_INET, s.SOCK_STREAM)
@@ -258,7 +276,7 @@ cont = controller_state()
 print("Done. \nbinding.... ", end = '')
 cont_local_sock.bind(('localhost', 5001))
 cont_local_sock.listen()
-if run:
+if MODE != 0:
     print("Done. \nconnecting to electronics....", end = '')
     #takes input commands and turns them into dictionaries of speeds
 ##    driver_local_sock.connect(('localhost', 5000))
@@ -267,7 +285,7 @@ if run:
     connection, addr  = cont_local_sock.accept()
     print("Done: conn from {}. \nReady for instructions.".format(addr))
 
-                   
+
     while 1:
         msg = connection.recv(2048).decode()
         #print("msg recvd {}".format(msg))
