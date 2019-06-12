@@ -219,7 +219,7 @@ class controller_state:
         self.grabber = True
         self.yeet = False
         self.arm_deploy = True
-        self.fudge_angle = 10
+        self.fudge_angle = 1
         self.fudge_length = 1
 
     def input_switcher(self, dictforminput):
@@ -227,10 +227,10 @@ class controller_state:
             self.status[key] = float(dictforminput[key])
             if key == "BTN_NORTH":
                 self.drive_mode = toggle(self.drive_mode)
-            elif key == "BTN_WEST":
+            elif key == "BTN_WEST" and dictforminput[key] == 1:
                 self.grabber = toggle(self.grabber)
             elif key == "BTN_TR":
-                print("TOGGLED ARM MODE")
+                # print("TOGGLED ARM MODE")
                 self.arm_mode = toggle(self.arm_mode)
             elif key == "BTN_TL":
                 self.sensitivity = toggle(self.sensitivity, self.sensitivity)
@@ -261,7 +261,10 @@ class controller_state:
                 speeds.update(arm.inc_theta2(self.fudge_angle*self.sensitivity*self.status["ABS_RY"]))
             else:
                 speeds.update(arm.inc_theta1(self.fudge_angle*self.sensitivity*self.status["ABS_RY"]))
-
+        if self.grabber:
+            speeds.update({"a3": 180})
+        else:
+            speeds.update({"a3": 0})
         return speeds
 
 
