@@ -19,6 +19,13 @@ class state:
                       'ABS_RY': 2**15, 'ABS_RX': 2**15, 'ABS_RZ': 2**8, 'BTN_THUMBR': 1, #right stick
                       'BTN_WEST': 1, 'BTN_SOUTH': 1, 'BTN_EAST': 1, 'BTN_NORTH':1 #buttons
                        }
+        self.deadzone = {'ABS_Y': 0.1, 'ABS_X':0.1, 'ABS_Z': 0, 'BTN_THUMBL': 0, #left stick
+                      'BTN_TL': 0, 'BTN_TR': 0, #bumpers
+                      'ABS_HAT0X': 0, 'ABS_HAT0Y': 0, #dpad
+                      'BTN_START': 1, 'BTN_SELECT': 1,#selectors
+                      'ABS_RY': 0.1, 'ABS_RX': 0.1, 'ABS_RZ': 0, 'BTN_THUMBR': 0, #right stick
+                      'BTN_WEST': 0, 'BTN_SOUTH': 0, 'BTN_EAST': 0, 'BTN_NORTH':0 #buttons
+                       }
         
         
 class network:
@@ -46,7 +53,10 @@ def get_changes(events, cont):
         #print(normalised_value)
         if abs(normalised_value  - cont.values[event.code])> 1/64:
             cont.values[event.code] = normalised_value
-            send_dict[event.code] = normalised_value
+            if abs(normalised_value) > cont.deadzone[event.code]:
+                send_dict[event.code] = normalised_value
+            else:
+                send_dict[event.code] = 0
     return send_dict
 
 def prep_msg(dictmsg):
