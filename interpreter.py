@@ -275,13 +275,13 @@ class controller_state:
 # MAIN ========================================================================
 print("===INTERPRETER START===")
 print("creating sockets & classes... ", end='')
-server = network_module.make_server(5001, 'localhost')
+server = network_module.make_server(5001, timeout=5e-3)
 driver_local_sock = s.socket(s.AF_INET, s.SOCK_STREAM)
 arm = rover_arm()
 cont = controller_state()
 if MODE != 0:
     print("Done. \nconnecting to electronics....", end='')
-    driver_local_sock.connect(('192.168.1.10', 5000))
+    driver_local_sock.connect(('192.168.1.11', 5000))
     print("Done.", end='\n')
     server.get_connection()
     while 1:

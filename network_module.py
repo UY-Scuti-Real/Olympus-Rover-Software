@@ -11,10 +11,11 @@ import time
 print_network_msg = True
 
 
-def make_stream_socket():
+def make_stream_socket(reuse_addr=True):
     sock = s.socket(s.AF_INET, s.SOCK_STREAM)
-    sock.setsockopt(s.SOL_SOCKET, s.SO_REUSEADDR, 1)
-    sock.setsockopt(s.SOL_SOCKET, s.SO_REUSEPORT, 1)
+    if reuse_addr:
+        sock.setsockopt(s.SOL_SOCKET, s.SO_REUSEADDR, 1)
+    # sock.setsockopt(s.SOL_SOCKET, s.SO_REUSEPORT, 1)
     return sock
 
 
@@ -29,11 +30,13 @@ def network_msg_print(*args):
 
 class client_socket:
     def __init__(self):
-        self.sock = make_stream_socket()
+        self.sock = make_stream_socket(False)
 
-    def connect_to(self, addrport):
-        self.target = addrport
-        self.sock.connect(addrport)
+    def connect_to(self, port, addr=s.gethostname()):
+        self.target = (addr, port)
+        network_msg_print("attempting to connect to {}".format(self.target))
+        self.sock.connect(self.target)
+        network_msg_print("done")
         self.conn_stat = True
 
     def send_message(self, msg):
@@ -45,18 +48,20 @@ class client_socket:
 
 
 class server_socket:
-    def __init__(self, u_port, u_ip=s.gethostname(), timeout=0.2):
+    def __init__(self, u_port, u_ip=s.gethostname(), timeout=5):
         self.sock = make_stream_socket()
         self.sock.bind((u_ip, u_port))
+        self.sock.listen(5)
         self.timeout = timeout
 
-    def get_connection(self):
-        self.sock.listen(1)
+    def get_connection(self):       
         self.sock.setblocking(1)
+        connection = 0
         network_msg_print("waiting for connection... ")
-        connection, addr = self.sock.accept()
+        while not connection:
+            connection, addr = self.sock.accept()
         network_msg_print("got connection from: {}".format(addr))
-        self.sock.listen(0)
+        # self.sock.listen(0)
         self.sock.setblocking(0)
         self.connection = connection
         return connection
@@ -82,9 +87,9 @@ class server_socket:
             return messages.decode()
 
 
-def make_server(u_port, u_ip=s.gethostname()):
-    return server_socket(u_port, u_ip)
+def make_server(u_port, u_ip=s.gethostname(), timeout=5):
+    return server_socket(u_port, u_ip, timeout)
 
 
 def make_client():
-    return client_socket
+    return client_socket()
