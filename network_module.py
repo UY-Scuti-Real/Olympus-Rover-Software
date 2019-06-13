@@ -31,6 +31,18 @@ class client_socket:
     def __init__(self):
         self.sock = make_stream_socket()
 
+    def connect_to(self, addrport):
+        self.target = addrport
+        self.sock.connect(addrport)
+        self.conn_stat = True
+
+    def send_message(self, msg):
+        if self.conn_stat:
+            self.sock.send(msg.encode())
+        else:
+            self.connect_to(self.target)
+            self.send_message(msg)
+
 
 class server_socket:
     def __init__(self, u_port, u_ip=s.gethostname(), timeout=0.2):
@@ -72,3 +84,7 @@ class server_socket:
 
 def make_server(u_port, u_ip=s.gethostname()):
     return server_socket(u_port, u_ip)
+
+
+def make_client():
+    return client_socket
