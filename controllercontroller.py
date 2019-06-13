@@ -72,7 +72,7 @@ command_map = {'ABS_Y': 'DRV_FWD',
 
 cont = state()
 net = network_module.make_client()
-net.connect_to(("localhost", 5001))
+net.connect_to(5001)
 while 1:
     events = get_gamepad()
     gamepad_dict = get_changes(events, cont)
