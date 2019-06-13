@@ -41,7 +41,7 @@ on, output number respectively
 
 class servo:
     def __init__(self, channel, min_pulse=0, max_pulse=0):
-        self.channel = channel
+        self.channel = int(channel)
         self.min_pulse = min_pulse
         self.max_pulse = max_pulse
 
@@ -56,29 +56,30 @@ class continous_servo(servo):
     def __init__(self, channel, min_pulse=0, max_pulse=0):
         # might be from python 2, keeping for austerity
         # super(continous_servo, self).__init__(channel, min_pulse, max_pulse)
-        super().__init__(self)
+        super().__init__(channel, min_pulse, max_pulse)
         if min_pulse and max_pulse:
             self.calibrate()
 
     def __call__(self, throttle):
         if -1 <= throttle <= 1:
-            kit.continous_servo[self.channel].throttle = throttle
+            kit.continuous_servo[self.channel].throttle = throttle
         else:
             pass
 
     def calibrate(self):
-        kit.continous_servo[self.channel].set_pulse_width_range(self.min_pulse,
+        kit.continuous_servo[self.channel].set_pulse_width_range(self.min_pulse,
                                                                 self.max_pulse)
 
 
 class standard_servo(servo):
     def __init__(self, channel, min_pulse=0, max_pulse=0):
         # super(standard_servo, self).__init__(channel, min_pulse, max_pulse)
-        super().__init__(self)
+        super().__init__(channel, min_pulse, max_pulse)
         if min_pulse and max_pulse:
             self.calibrate()
 
     def __call__(self, angle):
+        # print(self.channel, type(self.channel))
         if 0 <= angle <= 180:
             kit.servo[self.channel].angle = angle
         else:
@@ -94,7 +95,7 @@ class driver:
         self.command_sock = s.socket(s.AF_INET, s.SOCK_STREAM)
         self.command_sock.setsockopt(s.SOL_SOCKET, s.SO_REUSEADDR, 1)
         self.command_sock.setsockopt(s.SOL_SOCKET, s.SO_REUSEPORT, 1)
-        self.command_sock.bind(("192.168.1.10", 5000))
+        self.command_sock.bind(('192.168.1.11', 5000))
         self.command_sock.listen(2048)
         if mode == 0:
             self.map = print_map
@@ -146,7 +147,10 @@ class driver:
         if speeds is not None:
             for speed in speeds:
                 if speed in self.map:
-                    self.map[speed](speeds[speed])
+                    try:
+                        self.map[speed](float(speeds[speed]))
+                    except Exception as e:
+                        print("bill nye meme", e, speed)
 
 
 # MAIN ==============================================================
