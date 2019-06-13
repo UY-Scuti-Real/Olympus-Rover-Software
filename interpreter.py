@@ -43,35 +43,39 @@ MODE = "DBW"
 def gimbal_drive(x, y, sensitivity=1):
     speeds = {}
     for wheel in range(0, 6):
+        y = -y
         speeds["w{}".format(str(wheel+1))] = y * sensitivity
-    speeds["g1"] = x*sensitivity
-    speeds["g2"] = x*sensitivity
-    speeds["g3"] = -1*x*sensitivity
-    speeds["g4"] = -1*x*sensitivity
+    speeds["g1"] = (x*90)*sensitivity +90
+    speeds["g2"] = (x*90)*sensitivity +90
+    speeds["g3"] = (x*-90)*sensitivity +90
+    speeds["g4"] = (x*-90)*sensitivity +90
     return speeds
 
 
 def differential_drive(x, y, sensitivity=1):
     # divide through by root 2 (hey that rhymes) to enfornce v_rms > 1
     speeds = {
-        "w1": (y + x)/(2**0.5),
+        "w1": (-y - x)/(2**0.5),
         "w2": (y - x)/(2**0.5),
-        "w3": (y + x)/(2**0.5),
+        "w3": (-y - x)/(2**0.5),
         "w4": (y - x)/(2**0.5),
-        "w5": (y + x)/(2**0.5),
+        "w5": (-y - x)/(2**0.5),
         "w6": (y - x)/(2**0.5)
         }
     return speeds
 
 
 def convert_msg(msg):
-    aryform = str(msg).split(",")
-    dictform = {}
-    for ary in aryform:
-        if len(ary) > 0:
-            key, value = ary.split(":")
-            dictform[key] = value
-    return dictform
+    if msg is not None:
+        aryform = str(msg).split(",")
+        dictform = {}
+        for ary in aryform:
+            if len(ary) > 0:
+                key, value = ary.split(":")
+                dictform[key] = value
+        return dictform
+    else:
+        return {}
 
 
 def toggle(x, number=False):
@@ -138,11 +142,11 @@ class rover_arm:
         self.theta2 = 0.01  # DEGREES
 
     def inc_theta1(self, angle):
-        self.theta1 = self.validate_angle(self.theta1 + angle)
+        self.theta1 = self.validate_angle(self.theta1 - angle)
         return {"a1": self.theta1}
 
     def inc_theta2(self, angle):
-        self.theta2 = self.validate_angle(self.theta2 + angle)
+        self.theta2 = self.validate_angle(self.theta2 - angle)
         return {"a2": self.theta2}
 
     def rotate_arm(self, angle):
