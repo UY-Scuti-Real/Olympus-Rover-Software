@@ -18,7 +18,7 @@ class state:
                       'ABS_RY': 2**15, 'ABS_RX': 2**15, 'ABS_RZ': 2**8, 'BTN_THUMBR': 1,  # right stick
                       'BTN_WEST': 1, 'BTN_SOUTH': 1, 'BTN_EAST': 1, 'BTN_NORTH': 1  # buttons
                       }
-        self.deadzone = {'ABS_Y': 0.1, 'ABS_X': 0.1, 'ABS_Z': 0, 'BTN_THUMBL': 0,  # left stick
+        self.deadzone = {'ABS_Y': 0.2, 'ABS_X': 0.2, 'ABS_Z': 0, 'BTN_THUMBL': 0,  # left stick
                          'BTN_TL': 0, 'BTN_TR': 0,  # bumpers
                          'ABS_HAT0X': 0, 'ABS_HAT0Y': 0,  # dpad
                          'BTN_START': 1, 'BTN_SELECT': 1,  # selectors
