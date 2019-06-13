@@ -47,7 +47,7 @@ def prep_msg(gamepad_dict):
     for key in gamepad_dict:
         command = command_map[key]
         strmsg += str(command) + ":" + str(gamepad_dict[key]) + ","
-    return strmsg[:-1]
+    return strmsg
 
 
 command_map = {'ABS_Y': 'DRV_FWD',
