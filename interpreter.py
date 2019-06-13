@@ -208,10 +208,10 @@ class rover_arm:
 class controller_state:
     def __init__(self):
         self.status = {
-            "ABS_X": 0,
-            "ABS_Y": 0,
-            "ABS_RX": 0,
-            "ABS_RY": 0,
+            "DRV_FWD": 0,
+            "DRV_TURN": 0,
+            "ARM_VERT": 0,
+            "ARM_HORI": 0,
             }
         self.drive_mode = True
         self.sensitivity = 1
@@ -224,20 +224,20 @@ class controller_state:
         self.fudge_length = 1
 
     def input_switcher(self, dictforminput):
-        for key in dictforminput:
-            self.status[key] = float(dictforminput[key])
-            if key == "BTN_NORTH":
+        for key, value in dictforminput.items():
+            self.status[key] = float(value)
+            if key == "TOGL_DRV" and float(value) == 1:
                 self.drive_mode = toggle(self.drive_mode)
-            elif key == "BTN_WEST":
+            elif key == "TOGL_GRB" and float(value) == 1:
                 self.grabber = toggle(self.grabber)
-            elif key == "BTN_TR":
+            elif key == "TOGL_ARM":
                 # print("TOGGLED ARM MODE")
                 self.arm_mode = toggle(self.arm_mode)
-            elif key == "BTN_TL":
+            elif key == "TOGL_SEN":
                 self.sensitivity = toggle(self.sensitivity, self.sensitivity)
-            elif key == "BTN_SOUTH":
+            elif key == "YEET":
                 self.yeet = True
-            elif key == "ABS_HAT0Y" and dictforminput[key] == 1:
+            elif key == "TOGL_MSC" and float(value) == 1:
                 self.arm_deploy = toggle(self.arm_deploy)
 
     def get_speeds(self, arm):
@@ -245,26 +245,26 @@ class controller_state:
         speeds = {}
         if self.drive_mode:
             speeds.update(gimbal_drive(
-                self.status["ABS_X"], self.status["ABS_Y"], self.sensitivity))
+                self.status["DRV_TURN"], self.status["DRV_FWD"], self.sensitivity))
         else:
             speeds.update(differential_drive(
-                self.status["ABS_X"], self.status["ABS_Y"], self.sensitivity))
+                self.status["DRV_TURN"], self.status["DRV_FWD"], self.sensitivity))
         if MODE == 0:
             if self.arm_mode:
                 #print("Extending arm")
                 speeds.update(arm.extend_arm(self.fudge_length
-                                             * self.sensitivity*self.status["ABS_RY"]))
+                                             * self.sensitivity * self.status["ARM_VERT"]))
             else:
                 #print("rotating arm")
                 speeds.update(arm.rotate_arm(self.fudge_angle
-                                             * self.sensitivity*self.status["ABS_RY"]))
+                                             * self.sensitivity * self.status["ARM_VERT"]))
         elif MODE == "DBW":
             if self.arm_mode:
                 speeds.update(arm.inc_theta2(self.fudge_angle
-                                             * self.sensitivity*self.status["ABS_RY"]))
+                                             * self.sensitivity * self.status["ARM_VERT"]))
             else:
-                speeds.update(arm.inc_theta1(self.fudge_angle
-                                             * self.sensitivity*self.status["ABS_RY"]))
+                speeds.update(arm.inc_theta1(-self.fudge_angle
+                                             * self.sensitivity * self.status["ARM_VERT"]))
         if self.grabber:
             speeds.update({"a3": 180})
         else:
