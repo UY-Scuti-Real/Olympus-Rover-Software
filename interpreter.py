@@ -1,5 +1,6 @@
 import socket as s
 import math as m
+import network_module
 """
 rover standards
 
@@ -38,9 +39,9 @@ MODE = "DBW"
 # MODE = 0
 # MODE = 1
 
+
 def gimbal_drive(x, y, sensitivity=1):
     speeds = {}
-    gimbals = {}
     for wheel in range(0, 6):
         speeds["w{}".format(str(wheel+1))] = y * sensitivity
     speeds["g1"] = x*sensitivity
@@ -51,16 +52,17 @@ def gimbal_drive(x, y, sensitivity=1):
 
 
 def differential_drive(x, y, sensitivity=1):
-    #normalised by (x**2 + y**2)**0.5
+    # divide through by root 2 (hey that rhymes) to enfornce v_rms > 1
     speeds = {
-        "w1":y + x,
-        "w2":y - x,
-        "w3":y + x,
-        "w4":y - x,
-        "w5":y + x,
-        "w6":y - x
+        "w1": (y + x)/(2**0.5),
+        "w2": (y - x)/(2**0.5),
+        "w3": (y + x)/(2**0.5),
+        "w4": (y - x)/(2**0.5),
+        "w5": (y + x)/(2**0.5),
+        "w6": (y - x)/(2**0.5)
         }
     return speeds
+
 
 def convert_msg(msg):
     aryform = str(msg).split(",")
@@ -72,7 +74,7 @@ def convert_msg(msg):
     return dictform
 
 
-def toggle(x, number = False):
+def toggle(x, number=False):
     if not number:
         return not x
     else:
@@ -81,27 +83,30 @@ def toggle(x, number = False):
         else:
             return 0.5
 
+
 def transmit(driver_sock, speeds):
     prefiltered_string = str(speeds) + ","
     filter_list = ['{', '}', "'", " "]
-    #print(prefiltered_string)
     postfiltered_string = ""
     for char in prefiltered_string:
         if char in filter_list:
             continue
         else:
             postfiltered_string += char
-    #print("sending:", postfiltered_string)
     driver_sock.send(postfiltered_string.encode())
 
-    pass
-#ROVER DRIVE==============================================================================
+
+# ROVER DRIVE==================================================================
+
+
 class rover_drive:
     def __init__(self):
         self.sensitivity = 1
         self.drive_mode = 1
 
-#TRIG STUFF ==============================================================================
+# TRIG STUFF ==================================================================
+
+
 def rad(deg):
     return deg/180 * m.pi
 
@@ -111,7 +116,7 @@ def deg(rad):
 
 
 def cosine_rule(b, c, A):
-    #a^2 =  b^2 + c^2 - 2bccosA
+    # a^2 =  b^2 + c^2 - 2bccosA
     asqr = (b**2 + c**2 - (2*b*c*m.cos(A)))
     a = m.sqrt(asqr)
     return a
@@ -121,25 +126,24 @@ def sine_rule(a, b, A):
     sinb = m.sin(A)/a * b
     return m.asin(sinb)
 
-#ARM BULLSHIT ============================================================================
+# ARM BULLSHIT ================================================================
+
+
 class rover_arm:
     def __init__(self):
-        self.L1 = 10        #cm
-        self.L2 = 10        #cm
+        self.L1 = 10  # cm
+        self.L2 = 10  # cm
         self.L3_check = self.L1**2 + self.L2**2
-        self.theta1 = 0.01  #IN FUCKING DEGREES
-        self.theta2 = 0.01  #DEGREES
-
+        self.theta1 = 0.01  # IN FUCKING DEGREES
+        self.theta2 = 0.01  # DEGREES
 
     def inc_theta1(self, angle):
         self.theta1 = self.validate_angle(self.theta1 + angle)
-        return {"a1":self.theta1}
-
+        return {"a1": self.theta1}
 
     def inc_theta2(self, angle):
         self.theta2 = self.validate_angle(self.theta2 + angle)
         return {"a2": self.theta2}
-
 
     def rotate_arm(self, angle):
         theta1 = self.theta1
@@ -150,14 +154,14 @@ class rover_arm:
             self.theta1 = 1
         else:
             self.theta1 = theta1
-        print("cos t2\t{} \tt2 {:.0f} \t t1 {:.3f}".format("!", self.theta2, self.theta1))
-        return {"a1":self.theta1}
+        print("cos t2\t{} \tt2 {:.0f} \t t1 {:.3f}".format(
+            "!", self.theta2, self.theta1))
+        return {"a1": self.theta1}
 
     def extend_arm(self, length):
         L3init = self.get_L3()
         L3new = L3init + length
         if L3new < L3init and self.theta1 >= 179:
-            print("your genius fix worked as always mr high IQ rick and morty watcher")
             theta2 = self.get_T2_from_L3(L3new)
             self.theta2 = self.validate_angle(theta2)
         else:
@@ -172,28 +176,25 @@ class rover_arm:
             else:
                 self.theta2 = theta2
             T1primenew = self.get_T1prime(L3new)
-            self.theta1 = self.validate_angle(self.theta1 - (T1primenew-T1primeinit))
-            #print("a1", self.theta1, "a2", self.theta2)
-        return{"a1":self.theta1, "a2":self.theta2}
+            self.theta1 = self.validate_angle(
+                self.theta1 - (T1primenew-T1primeinit))
+        return{"a1": self.theta1, "a2": self.theta2}
 
     def get_L3(self):
-        L3squared = self.L1**2 + self.L2**2 - 2*self.L1*self.L2*m.cos(rad(self.theta2))
+        L3squared = self.L1**2 + self.L2**2 - 2 * \
+            self.L1*self.L2*m.cos(rad(self.theta2))
         return L3squared**0.5
 
     def get_T2_from_L3(self, L3):
         cosT2 = (L3**2 - self.L1**2 - self.L2**2)/(-2*self.L1*self.L2)
-        #print(cosT2)
         T2 = deg(m.acos(cosT2))
-        print("cos t2\t{:.3f} \tt2 {:.0f} \t t1 {:.3f}".format(cosT2, T2, self.theta1))
         return T2
 
     def get_T1prime(self, L3):
         sinT1diff = self.L1/L3 * m.sin(rad(self.theta2))
-        #might be self.l2 there instead...
+        # might be self.l2 there instead...
         T1diff = deg(m.asin(abs(sinT1diff)))
-        #print(sinT1diff, T1diff)
         return self.theta1 - T1diff
-
 
     def validate_angle(self, angle):
         if angle >= 180:
@@ -203,20 +204,20 @@ class rover_arm:
         return angle
 
 
-
-#CONTROLLER===============================================================================
+# CONTROLLER===================================================================
 class controller_state:
     def __init__(self):
         self.status = {
-            "ABS_X":0,
-            "ABS_Y":0,
-            "ABS_RX":0,
-            "ABS_RY":0,
+            "ABS_X": 0,
+            "ABS_Y": 0,
+            "ABS_RX": 0,
+            "ABS_RY": 0,
             }
         self.drive_mode = True
         self.sensitivity = 1
         self.arm_mode = True
         self.grabber = True
+        self.payload_bay = True
         self.yeet = False
         self.arm_deploy = True
         self.fudge_angle = 1
@@ -239,7 +240,6 @@ class controller_state:
             elif key == "ABS_HAT0Y" and dictforminput[key] == 1:
                 self.arm_deploy = toggle(self.arm_deploy)
 
-
     def get_speeds(self, arm):
         #print(self.status)
         speeds = {}
@@ -252,15 +252,19 @@ class controller_state:
         if MODE == 0:
             if self.arm_mode:
                 #print("Extending arm")
-                speeds.update(arm.extend_arm(self.fudge_length*self.sensitivity*self.status["ABS_RY"]))
+                speeds.update(arm.extend_arm(self.fudge_length
+                                             * self.sensitivity*self.status["ABS_RY"]))
             else:
                 #print("rotating arm")
-                speeds.update(arm.rotate_arm(self.fudge_angle*self.sensitivity*self.status["ABS_RY"]))
+                speeds.update(arm.rotate_arm(self.fudge_angle
+                                             * self.sensitivity*self.status["ABS_RY"]))
         elif MODE == "DBW":
             if self.arm_mode:
-                speeds.update(arm.inc_theta2(self.fudge_angle*self.sensitivity*self.status["ABS_RY"]))
+                speeds.update(arm.inc_theta2(self.fudge_angle
+                                             * self.sensitivity*self.status["ABS_RY"]))
             else:
-                speeds.update(arm.inc_theta1(self.fudge_angle*self.sensitivity*self.status["ABS_RY"]))
+                speeds.update(arm.inc_theta1(self.fudge_angle
+                                             * self.sensitivity*self.status["ABS_RY"]))
         if self.grabber:
             speeds.update({"a3": 180})
         else:
@@ -268,30 +272,20 @@ class controller_state:
         return speeds
 
 
-
-#MAIN=====================================================================================
+# MAIN ========================================================================
 print("===INTERPRETER START===")
-print("creating sockets & classes... ", end = '')
-cont_local_sock = s.socket(s.AF_INET, s.SOCK_STREAM)
+print("creating sockets & classes... ", end='')
+server = network_module.make_server(5001, 'localhost')
 driver_local_sock = s.socket(s.AF_INET, s.SOCK_STREAM)
 arm = rover_arm()
 cont = controller_state()
-print("Done. \nbinding.... ", end = '')
-cont_local_sock.bind(('localhost', 5001))
-cont_local_sock.listen()
 if MODE != 0:
-    print("Done. \nconnecting to electronics....", end = '')
-    #takes input commands and turns them into dictionaries of speeds
-##    driver_local_sock.connect(('localhost', 5000))
+    print("Done. \nconnecting to electronics....", end='')
     driver_local_sock.connect(('192.168.1.10', 5000))
-    print("Done. \nawaiting connection from controller...", end = '')
-    connection, addr  = cont_local_sock.accept()
-    print("Done: conn from {}. \nReady for instructions.".format(addr))
-
-
+    print("Done.", end='\n')
+    server.get_connection()
     while 1:
-        msg = connection.recv(2048).decode()
-        #print("msg recvd {}".format(msg))
+        msg = server.get_messages()
         dictmsg = convert_msg(msg)
         cont.input_switcher(dictmsg)
         speeds = cont.get_speeds(arm)
