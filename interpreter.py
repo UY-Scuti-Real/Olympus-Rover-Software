@@ -45,10 +45,10 @@ def gimbal_drive(x, y, sensitivity=1):
     for wheel in range(0, 6):
         y = -y
         speeds["w{}".format(str(wheel+1))] = y * sensitivity
-    speeds["g1"] = (x*90)*sensitivity +90
-    speeds["g2"] = (x*90)*sensitivity +90
-    speeds["g3"] = (x*-90)*sensitivity +90
-    speeds["g4"] = (x*-90)*sensitivity +90
+    speeds["g1"] = (x*90)*sensitivity + 90
+    speeds["g2"] = (x*90)*sensitivity + 90
+    speeds["g3"] = (x*-90)*sensitivity + 90
+    speeds["g4"] = (x*-90)*sensitivity + 90
     return speeds
 
 
@@ -243,6 +243,8 @@ class controller_state:
                 self.yeet = True
             elif key == "TOGL_MSC" and float(value) == 1:
                 self.arm_deploy = toggle(self.arm_deploy)
+            elif key == "SET_SENS":
+                self.sensitivity = 1-float(value)
 
     def get_speeds(self, arm):
         #print(self.status)
