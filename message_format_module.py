@@ -1,12 +1,7 @@
 #  message format module
-base_format = {"header": str, "value": float, "delimiter": ':'}
-
-# these can be set once imported, will effect entire module
-default_format = base_format
-default_filter = filter(default_format)
 
 
-class filter:
+class cmd_filter:
     """
     init expects:
         dict cmd_format,
@@ -77,6 +72,13 @@ class filter:
             return cmd, value
         else:
             return None
+
+
+base_format = {"header": str, "value": float, "delimiter": ':'}
+
+# these can be set once imported, will effect entire module
+default_format = base_format
+default_filter = cmd_filter(default_format)
 
 
 def validate_cmds(cmd_dict, cmd_fltr=default_filter):
