@@ -1,5 +1,5 @@
 #  message format module
-default_format = {"header": str, "value": float}
+default_format = {"header": str, "value": float, "delimiter": ':'}
 default_filter = filter(default_format)
 
 
@@ -91,7 +91,8 @@ def get_dictcmds_from_str(string_message):
     return cmd_dict
 
 
-def get_strcmd_from_dict(cmd_dict, cmd_format=default_format):
+def get_strcmds_from_dict(cmd_dict, cmd_format=default_format):
     string = ""
     for key, value in cmd_dict.items():
-        string += key + ':'
+        string += key + default_format["delimiter"] + str(value) + ','
+    return string
