@@ -49,7 +49,7 @@ class client_socket:
                 time.sleep(3)
                 self.sock.close()
                 self.sock = make_stream_socket()
-                network_msg_print("could not connect to {} (dead socket), cleaning up...".format(self.target))    
+                network_msg_print("could not connect to {} (dead socket), cleaning up...".format(self.target))
         network_msg_print("done")
         self.sock.setblocking(0)
         self.conn_stat = True
