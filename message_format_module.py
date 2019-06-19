@@ -87,12 +87,13 @@ def validate_cmds(cmd_dict, cmd_fltr=default_filter):
 
 def get_dictcmds_from_str(string_message, cmd_format=default_format):
     cmd_dict = {}
-    if ',' in string_message:
-        cmd_list = string_message.split(',')
-    for cmd in cmd_list:
-        if len(cmd) > 0 and cmd_format["delimiter"] in cmd:
-            cmd_name, cmd_value = cmd.split(cmd_format["delimiter"])
-            cmd_dict[cmd_name] = cmd_value
+    if string_message is not None:
+        if ',' in string_message:
+            cmd_list = string_message.split(',')
+            for cmd in cmd_list:
+                if len(cmd) > 0 and cmd_format["delimiter"] in cmd:
+                    cmd_name, cmd_value = cmd.split(cmd_format["delimiter"])
+                    cmd_dict[cmd_name] = cmd_value
     return cmd_dict
 
 
