@@ -1,6 +1,7 @@
 import math as m
 from modules import network_module
 from modules import message_format_module
+from socket import gethostname
 """
 rover standards
 
@@ -35,9 +36,10 @@ if the rover has debug LEDs/sounds, should be presented as
 on, output number respectively
 
 """
-MODE = "DBW"
-# MODE = 0
-# MODE = 1
+MODE = ["DBW", "localhost"]
+# MODE = ["DBW"]
+# MODE = [0]
+# MODE = [1]
 
 
 def toggle(x, number=False):
@@ -218,30 +220,36 @@ class controller_state:
                 self.sensitivity = 1-float(value)
 
     def get_speeds(self, arm):
-        #print(self.status)
+        # print(self.status)
         speeds = {}
         if self.drive_mode:
             speeds.update(gimbal_drive(
-                self.status["DRV_TURN"], self.status["DRV_FWD"], self.sensitivity))
+                self.status["DRV_TURN"],
+                self.status["DRV_FWD"], self.sensitivity))
         else:
             speeds.update(differential_drive(
-                self.status["DRV_TURN"], self.status["DRV_FWD"], self.sensitivity))
-        if MODE == 0:
+                self.status["DRV_TURN"],
+                self.status["DRV_FWD"], self.sensitivity))
+        if "DBW" not in MODE:
             if self.arm_mode:
-                #print("Extending arm")
+                # print("Extending arm")
                 speeds.update(arm.extend_arm(self.fudge_length
-                                             * self.sensitivity * self.status["ARM_VERT"]))
+                                             * self.sensitivity
+                                             * self.status["ARM_VERT"]))
             else:
-                #print("rotating arm")
+                # print("rotating arm")
                 speeds.update(arm.rotate_arm(self.fudge_angle
-                                             * self.sensitivity * self.status["ARM_VERT"]))
-        elif MODE == "DBW":
+                                             * self.sensitivity
+                                             * self.status["ARM_VERT"]))
+        elif "DBW" in MODE:
             if self.arm_mode:
                 speeds.update(arm.inc_theta2(self.fudge_angle
-                                             * self.sensitivity * self.status["ARM_VERT"]))
+                                             * self.sensitivity
+                                             * self.status["ARM_VERT"]))
             else:
                 speeds.update(arm.inc_theta1(-self.fudge_angle
-                                             * self.sensitivity * self.status["ARM_VERT"]))
+                                             * self.sensitivity
+                                             * self.status["ARM_VERT"]))
         if self.grabber:
             speeds.update({"a3": 180})
         else:
@@ -250,23 +258,29 @@ class controller_state:
 
 
 # MAIN ========================================================================
+if 'localhost' in MODE:
+    address = gethostname()
+elif 'wifi' in MODE:
+    address = '192.168.1.11'
+elif 'ethernet' in MODE:
+    address = '192.168.1.10'
+
 print("===INTERPRETER START===")
 print("creating sockets & classes... ", end='')
 controller_server = network_module.make_server(5001, timeout=5e-3)
 driver_client = network_module.make_client()
 arm = rover_arm()
 cont = controller_state()
-if MODE != 0:
-    print("Done. \nconnecting to electronics....", end='')
-    driver_client.connect(('192.168.1.11', 5000))
-    print("Done.", end='\n')
-    controller_server.get_connection()
-    while 1:
-        string_cmd_msg = controller_server.get_messages()
-        dict_msg = message_format_module.get_dictcmds_from_str(string_cmd_msg)
-        cont.input_switcher(dict_msg)
-        dict_speeds = cont.get_speeds(arm)
-        string_speeds_msg = message_format_module.get_strcmds_from_dict(dict_speeds)
-        driver_client.send_message(string_speeds_msg)
-else:
-    print("Done.\nEntering test mode:")
+print("Done. \nconnecting to electronics....", end='')
+driver_client.connect((address, 5000))
+print("Done.", end='\n')
+controller_server.get_connection()
+while 'test' not in MODE:
+    str_cmd_msg = controller_server.get_messages()
+    dict_msg = message_format_module.get_valid_cmds(str_cmd_msg)
+    cont.input_switcher(dict_msg)
+    dict_speeds = cont.get_speeds(arm)
+    str_speeds_msg = message_format_module.get_strcmds_from_dict(dict_speeds)
+    driver_client.send_message(str_speeds_msg)
+
+print("Entering test mode:")

@@ -1,11 +1,16 @@
-#Driver
-import socket as s
-import select
-from adafruit_servokit import ServoKit
+# Driver
+from modules import network_module
+from modules import message_format_module
+# MODE ========================================================================
+MODE = [1]
+try:
+    from adafruit_servokit import ServoKit
+    kit = ServoKit(channels=16)
+except (NotImplementedError, ImportError):
+    print("unable to access electronics, moving to print mode")
+    MODE = [0]
 
-#MODE ====================================================================================
-MODE = 1
-#=========================================================================================
+# =============================================================================
 """
 rover standards
 
@@ -90,71 +95,24 @@ class standard_servo(servo):
                                                       self.max_pulse)
 
 
-class driver:
-    def __init__(self, mode):
-        self.command_sock = s.socket(s.AF_INET, s.SOCK_STREAM)
-        self.command_sock.setsockopt(s.SOL_SOCKET, s.SO_REUSEADDR, 1)
-        self.command_sock.setsockopt(s.SOL_SOCKET, s.SO_REUSEPORT, 1)
-        self.command_sock.bind(('192.168.1.11', 5000))
-        self.command_sock.listen(2048)
-        if mode == 0:
-            self.map = print_map
-        elif mode == 1:
-            self.map = electronics_map
-        while 1:
-            self.aquire_conn()
-            while self.connection:
-                msg = self.get_msg()
-                if msg and msg != b'1':
-                    speeds = self.convert_msg(msg)
-                    self.update(speeds)
+def get_map_from_mode(mode):
+    if 0 in mode:
+        return print_map
+    elif 1 in mode:
+        return electronics_map
 
-    def aquire_conn(self):
-        self.command_sock.setblocking(1)
-        self.connection, addr = self.command_sock.accept()
-        print("got connection from {}".format(addr))
-        self.command_sock.setblocking(0)
 
-    def get_msg(self):
-        try:
-            readable, _, errors = select.select(
-                        [self.connection],
-                        [],
-                        [self.connection],
-                        5)
-            if len(errors) > 0:
-                self.connection = False
-                return False
-            elif len(readable) == 0:
-                return b'1'
-            for readable_socket in readable:
-                msg = readable_socket.recv(2048)
-                return msg.decode()
-        except ConnectionResetError:
-            return False
-
-    def convert_msg(self, msg):
-        aryform = str(msg).split(",")
-        dictform = {}
-        for ary in aryform:
-            if len(ary) == 0 or ":" not in ary:
-                continue
-            key, value = ary.split(":")
-            dictform[key] = value
-        return dictform
-
-    def update(self, speeds):
-        if speeds is not None:
-            for speed in speeds:
-                if speed in self.map:
-                    try:
-                        self.map[speed](float(speeds[speed]))
-                    except Exception as e:
-                        print("bill nye meme", e, speed)
+def update(speeds):
+    if speeds is not None:
+        for speed in speeds:
+            if speed in mode_map:
+                try:
+                    mode_map[speed](float(speeds[speed]))
+                except Exception as e:
+                    print("bill nye meme", e, speed)
 
 
 # MAIN ==============================================================
-kit = ServoKit(channels=16)
 # wheel declartions (calibration needed)
 wheel1 = continous_servo(0)
 wheel2 = continous_servo(1)
@@ -224,4 +182,10 @@ null_map = {"w1": 0,
             }
 
 print("Starting driver")
-drive = driver(MODE)
+command_server = network_module.make_server(5000)
+command_server.get_connection()
+mode_map = get_map_from_mode(MODE)
+while 1:
+    string_messages = command_server.get_messages()
+    cmd_dict = message_format_module.get_valid_cmds(string_messages)
+    update(cmd_dict)
