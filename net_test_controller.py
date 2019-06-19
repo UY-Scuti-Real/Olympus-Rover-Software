@@ -2,6 +2,7 @@
 import time
 import math
 import network_module
+import message_format_module
 
 
 def get_position(x):
@@ -9,19 +10,16 @@ def get_position(x):
     return x
 
 
-def construct_message(value):
-    message = "sx:{},".format(value)
-    return message
-
-
 sock = network_module.make_client()
 sock.connect_to(5001, 'localhost')
 x = 0
 period = 1/1
 resolution = 36
+cmd_dict = {}
 while 1:
     x = get_position(x)
     sinx = math.sin(x)
-    message = construct_message(sinx)
+    cmd_dict["sx"] = sinx
+    message = message_format_module.get_strcmds_from_dict(cmd_dict)
     sock.send_message(message)
     time.sleep(period/resolution)

@@ -1,5 +1,8 @@
 #  message format module
-default_format = {"header": str, "value": float, "delimiter": ':'}
+base_format = {"header": str, "value": float, "delimiter": ':'}
+
+# these can be set once imported, will effect entire module
+default_format = base_format
 default_filter = filter(default_format)
 
 
@@ -76,17 +79,17 @@ class filter:
             return None
 
 
-def validate_cmds(cmd_dict, filter_obj=default_filter):
-    return filter_obj(cmd_dict)
+def validate_cmds(cmd_dict, cmd_fltr=default_filter):
+    return cmd_fltr(cmd_dict)
 
 
-def get_dictcmds_from_str(string_message):
+def get_dictcmds_from_str(string_message, cmd_format=default_format):
     cmd_dict = {}
     if ',' in string_message:
-        cmd_list = string_message.split(':')
+        cmd_list = string_message.split(',')
     for cmd in cmd_list:
-        if len(cmd) > 0 and ':' in cmd:
-            cmd_name, cmd_value = cmd.split(':')
+        if len(cmd) > 0 and cmd_format["delimiter"] in cmd:
+            cmd_name, cmd_value = cmd.split(cmd_format["delimiter"])
             cmd_dict[cmd_name] = cmd_value
     return cmd_dict
 
@@ -96,3 +99,10 @@ def get_strcmds_from_dict(cmd_dict, cmd_format=default_format):
     for key, value in cmd_dict.items():
         string += key + default_format["delimiter"] + str(value) + ','
     return string
+
+
+def get_valid_cmds(string_message,
+                   cmd_fmt=default_format, cmd_fltr=default_filter):
+    cmd_dict = get_dictcmds_from_str(string_message)
+    valid_cmds = validate_cmds(cmd_dict, cmd_fltr=default_filter)
+    return valid_cmds
