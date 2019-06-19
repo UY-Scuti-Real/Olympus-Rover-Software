@@ -76,11 +76,13 @@ class client_socket:
 
 
 class server_socket:
-    def __init__(self, u_port, u_ip=s.gethostname(), timeout=5):
+    def __init__(self, u_port, u_ip=s.gethostname(), timeout=5, max_timeout=30):
         self.sock = make_stream_socket()
         self.sock.bind((u_ip, u_port))
         self.sock.listen(5)
         self.timeout = timeout
+        self.max_timeout = max_timeout
+        self.total_timeout_time = 0
 
     def get_connection(self):
         self.sock.setblocking(1)
@@ -104,13 +106,20 @@ class server_socket:
                         self.timeout)
             if len(errors) > 0:
                 self.connection = False
-                return False
-            elif len(readable) == 0:
+                raise ConnectionResetError("socket in error")
                 return None
+            elif len(readable) == 0:
+                self.total_timeout_time += self.timeout
+                if self.total_timeout_time > self.max_timeout:
+                    self.total_timeout_time = 0
+                    self.connection = False
+                    raise ConnectionResetError("too long since last message")
+                else:
+                    return None
             msg = readable[0].recv(2048)
             return msg.decode()
-        except ConnectionResetError:
-            network_msg_print("connection failed, reaquiring")
+        except ConnectionResetError as e:
+            network_msg_print("connection failed: {}\nreaquiring".format(e))
             self.get_connection()
             messages = self.get_messages()
             return messages

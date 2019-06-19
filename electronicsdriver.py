@@ -103,6 +103,8 @@ def get_map_from_mode(mode):
 
 
 def update(speeds):
+    if 0 in MODE:
+        print("\n")
     if speeds is not None:
         for speed in speeds:
             if speed in mode_map:
@@ -111,6 +113,10 @@ def update(speeds):
                 except Exception as e:
                     print("bill nye meme", e, speed)
 
+
+def debug_print(statement):
+    str_num = str(statement)[:4]
+    print(str_num, " ",  end='')
 
 # MAIN ==============================================================
 # wheel declartions (calibration needed)
@@ -132,21 +138,21 @@ grabber = standard_servo(12)
 waist = standard_servo(13)
 cargo = standard_servo(14)
 
-print_map = {"w1": print,
-             "w2": print,
-             "w3": print,
-             "w4": print,
-             "w5": print,
-             "w6": print,
-             "g1": print,
-             "g2": print,
-             "g3": print,
-             "g4": print,
-             "a1": print,
-             "a2": print,
-             "a3": print,
-             "a4": print,
-             "p4": print,
+print_map = {"w1": debug_print,
+             "w2": debug_print,
+             "w3": debug_print,
+             "w4": debug_print,
+             "w5": debug_print,
+             "w6": debug_print,
+             "g1": debug_print,
+             "g2": debug_print,
+             "g3": debug_print,
+             "g4": debug_print,
+             "a1": debug_print,
+             "a2": debug_print,
+             "a3": debug_print,
+             "a4": debug_print,
+             "p4": debug_print,
              }
 
 electronics_map = {"w1": wheel1,

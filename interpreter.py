@@ -36,7 +36,8 @@ if the rover has debug LEDs/sounds, should be presented as
 on, output number respectively
 
 """
-MODE = ["DBW", "localhost"]
+# MODE = ["DBW", "localhost"]
+MODE = ["DBW", "ethernet"]
 # MODE = ["DBW"]
 # MODE = [0]
 # MODE = [1]
@@ -111,7 +112,7 @@ class rover_arm:
         self.L1 = 10  # cm
         self.L2 = 10  # cm
         self.L3_check = self.L1**2 + self.L2**2
-        self.theta1 = 0.01  # IN FUCKING DEGREES
+        self.theta1 = 179  # IN FUCKING DEGREES
         self.theta2 = 0.01  # DEGREES
 
     def inc_theta1(self, angle):
@@ -190,6 +191,7 @@ class controller_state:
             "ARM_VERT": 0,
             "ARM_HORI": 0,
             }
+        self.sensitivity_fudge = 0.75
         self.drive_mode = True
         self.sensitivity = 1
         self.arm_mode = True
@@ -217,7 +219,8 @@ class controller_state:
             elif key == "TOGL_MSC" and float(value) == 1:
                 self.arm_deploy = toggle(self.arm_deploy)
             elif key == "SET_SENS":
-                self.sensitivity = 1-float(value)
+                self.sensitivity = 1-float(value)*self.sensitivity_fudge
+                # print("sens: ", value)
 
     def get_speeds(self, arm):
         # print(self.status)
@@ -260,19 +263,22 @@ class controller_state:
 # MAIN ========================================================================
 if 'localhost' in MODE:
     address = gethostname()
+    timeout = 0.5
 elif 'wifi' in MODE:
     address = '192.168.1.11'
+    timeout = 5e-3
 elif 'ethernet' in MODE:
     address = '192.168.1.10'
+    timeout = 5e-3
 
 print("===INTERPRETER START===")
 print("creating sockets & classes... ", end='')
-controller_server = network_module.make_server(5001, timeout=5e-3)
+controller_server = network_module.make_server(5001, timeout=timeout)
 driver_client = network_module.make_client()
 arm = rover_arm()
 cont = controller_state()
 print("Done. \nconnecting to electronics....", end='')
-driver_client.connect((address, 5000))
+driver_client.connect_to(5000, address)
 print("Done.", end='\n')
 controller_server.get_connection()
 while 'test' not in MODE:

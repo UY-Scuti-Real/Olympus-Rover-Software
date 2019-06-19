@@ -53,7 +53,7 @@ def prep_msg(gamepad_dict):
 
 command_map = {'ABS_Y': 'DRV_FWD',
                'ABS_X': 'DRV_TURN',
-               'ABS_Z': 'SET_SENS',
+               'ABS_Z': 'U',
                'BTN_THUMBL': 'U',  # left stick
                'BTN_TL': 'U',
                'BTN_TR': 'TOGL_ARM',  # bumpers
@@ -63,7 +63,7 @@ command_map = {'ABS_Y': 'DRV_FWD',
                'BTN_SELECT': 'U',  # selectors
                'ABS_RY': 'ARM_VERT',
                'ABS_RX': 'ARM_HORI',
-               'ABS_RZ': 'U',
+               'ABS_RZ': 'SET_SENS',
                'BTN_THUMBR': 'U',  # right stick
                'BTN_WEST': 'TOGL_GRB',
                'BTN_SOUTH': 'YEET',

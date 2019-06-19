@@ -35,6 +35,7 @@ class cmd_filter:
         for i in range(len(cmds)):
             cmd_tuple = cmds.popitem()
             checked_cmd = self._validate_cmd(*cmd_tuple)
+            # print("checked cmd: ", checked_cmd, "\n")
             if checked_cmd is not None:
                 valid_cmds[checked_cmd[0]] = checked_cmd[1]
         return valid_cmds
@@ -47,7 +48,7 @@ class cmd_filter:
         except ValueError:
             # if you can't float the value, it shouldn't pass
             valid = False
-            return 0
+            return None
 
         if "range" in self.cmd_fmt:
             if self.cmd_fmt["range"][0] < value < self.cmd_fmt["range"][1]:
