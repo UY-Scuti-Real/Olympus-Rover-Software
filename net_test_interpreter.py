@@ -1,4 +1,5 @@
-import network_module
+# import network_module
+from modules import network_module
 
 server_sock = network_module.make_server(5001, 'localhost')
 client_sock = network_module.make_client()

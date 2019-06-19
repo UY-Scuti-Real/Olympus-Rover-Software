@@ -1,5 +1,6 @@
 from inputs import get_gamepad
-import network_module
+# import network_module
+from modules import network_module
 
 
 class state:

@@ -1,8 +1,10 @@
 # for testing the network module
 import time
 import math
-import network_module
-import message_format_module
+# import network_module
+# import message_format_module
+from modules import message_format_module
+from modules import network_module
 
 
 def get_position(x):

@@ -1,5 +1,7 @@
-import network_module
-import message_format_module
+# import network_module
+# import message_format_module
+from modules import message_format_module
+from modules import network_module
 
 
 def print_wave(value):
