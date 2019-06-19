@@ -56,11 +56,8 @@ class client_socket:
 
     def send_message(self, msg):
         if self.conn_stat:
-            _, writeable, errors = select.select(
-                        [],
-                        [self.sock],
-                        [self.sock],
-                        self.timeout)
+            _, writeable, errors = select.select([], [self.sock],
+                                                 [self.sock], self.timeout)
             if len(writeable) > 0:
                 try:
                     writeable[0].send(msg.encode())
@@ -76,53 +73,73 @@ class client_socket:
 
 
 class server_socket:
-    def __init__(self, u_port, u_ip=s.gethostname(), timeout=5, max_timeout=30):
+    """
+    timeout response:
+    0: listen again
+    1: listen again until max timeout, then dump connection & wait.
+    2: listen again until max timeout, then return None
+    3: dump connection on first timeout
+    4: return None on first timeout
+
+    Future versions:
+    -socket just remembers the state it's in, returns after every attempt.
+    -successive "read" calls have different effects (timeout response)
+    -allow module user to make decisions based on socket/connection state
+    """
+
+    def __init__(self, u_port, u_ip=s.gethostname(),
+                 timeout=5, max_timeout=60, timeout_response=0):
+        self.timeout = timeout
+        self.max_timeout = max_timeout
         self.sock = make_stream_socket()
         self.sock.bind((u_ip, u_port))
         self.sock.listen(5)
-        self.timeout = timeout
-        self.max_timeout = max_timeout
         self.total_timeout_time = 0
 
     def get_connection(self):
         self.sock.setblocking(1)
         self.sock.listen(1)
-        connection = 0
         network_msg_print("waiting for connection... ")
-        while not connection:
-            connection, addr = self.sock.accept()
+        self.connection, addr = self.sock.accept()
         network_msg_print("got connection from: {}".format(addr))
         self.sock.listen(0)
         self.sock.setblocking(0)
-        self.connection = connection
-        return connection
 
     def get_messages(self):
+        msg = None
         try:
-            readable, _, errors = select.select(
-                        [self.connection],
-                        [],
-                        [self.connection],
-                        self.timeout)
+            readable, _, errors = select.select([self.connection], [],
+                                                [self.connection],
+                                                self.timeout)
             if len(errors) > 0:
+                # socket in error
                 self.connection = False
                 raise ConnectionResetError("socket in error")
-                return None
             elif len(readable) == 0:
+                # socket alive, but not readable: timeout
                 self.total_timeout_time += self.timeout
                 if self.total_timeout_time > self.max_timeout:
                     self.total_timeout_time = 0
                     self.connection = False
                     raise ConnectionResetError("too long since last message")
-                else:
-                    return None
-            msg = readable[0].recv(2048)
-            return msg.decode()
+            elif len(readable) > 0:
+                # socket readable
+                self.total_timeout_time = 0
+                msg = readable[0].recv(2048).decode()
         except ConnectionResetError as e:
             network_msg_print("connection failed: {}\nreaquiring".format(e))
             self.get_connection()
-            messages = self.get_messages()
-            return messages
+            msg = self.get_messages()
+        return msg
+
+    def _handle_timeout(self):
+        pass
+
+    def _report_timeout(self):
+        pass
+
+    def _handle_dead_connection(self):
+        pass
 
 
 def make_server(u_port, u_ip=s.gethostname(), timeout=5):

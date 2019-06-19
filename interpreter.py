@@ -37,7 +37,7 @@ on, output number respectively
 
 """
 # MODE = ["DBW", "localhost"]
-MODE = ["DBW", "ethernet"]
+MODE = ["DBW", "ethernet", 'sendall']
 # MODE = ["DBW"]
 # MODE = [0]
 # MODE = [1]
