@@ -1,6 +1,6 @@
-import socket as s
 import math as m
-import network_module
+from modules import network_module
+from modules import message_format_module
 """
 rover standards
 
@@ -40,6 +40,17 @@ MODE = "DBW"
 # MODE = 1
 
 
+def toggle(x, number=False):
+    if not number:
+        return not x
+    else:
+        if number < 1:
+            return 1
+        else:
+            return 0.5
+
+
+# ROVER DRIVE==================================================================
 def gimbal_drive(x, y, sensitivity=1):
     speeds = {}
     for wheel in range(0, 6):
@@ -65,52 +76,13 @@ def differential_drive(x, y, sensitivity=1):
     return speeds
 
 
-def convert_msg(msg):
-    if msg is not None:
-        aryform = str(msg).split(",")
-        dictform = {}
-        for ary in aryform:
-            if len(ary) > 0:
-                key, value = ary.split(":")
-                dictform[key] = value
-        return dictform
-    else:
-        return {}
-
-
-def toggle(x, number=False):
-    if not number:
-        return not x
-    else:
-        if number < 1:
-            return 1
-        else:
-            return 0.5
-
-
-def transmit(driver_sock, speeds):
-    prefiltered_string = str(speeds) + ","
-    filter_list = ['{', '}', "'", " "]
-    postfiltered_string = ""
-    for char in prefiltered_string:
-        if char in filter_list:
-            continue
-        else:
-            postfiltered_string += char
-    driver_sock.send(postfiltered_string.encode())
-
-
-# ROVER DRIVE==================================================================
-
-
 class rover_drive:
     def __init__(self):
         self.sensitivity = 1
         self.drive_mode = 1
 
+
 # TRIG STUFF ==================================================================
-
-
 def rad(deg):
     return deg/180 * m.pi
 
@@ -130,9 +102,8 @@ def sine_rule(a, b, A):
     sinb = m.sin(A)/a * b
     return m.asin(sinb)
 
+
 # ARM BULLSHIT ================================================================
-
-
 class rover_arm:
     def __init__(self):
         self.L1 = 10  # cm
@@ -281,20 +252,21 @@ class controller_state:
 # MAIN ========================================================================
 print("===INTERPRETER START===")
 print("creating sockets & classes... ", end='')
-server = network_module.make_server(5001, timeout=5e-3)
-driver_local_sock = s.socket(s.AF_INET, s.SOCK_STREAM)
+controller_server = network_module.make_server(5001, timeout=5e-3)
+driver_client = network_module.make_client()
 arm = rover_arm()
 cont = controller_state()
 if MODE != 0:
     print("Done. \nconnecting to electronics....", end='')
-    driver_local_sock.connect(('192.168.1.11', 5000))
+    driver_client.connect(('192.168.1.11', 5000))
     print("Done.", end='\n')
-    server.get_connection()
+    controller_server.get_connection()
     while 1:
-        msg = server.get_messages()
-        dictmsg = convert_msg(msg)
-        cont.input_switcher(dictmsg)
-        speeds = cont.get_speeds(arm)
-        transmit(driver_local_sock, speeds)
+        string_cmd_msg = controller_server.get_messages()
+        dict_msg = message_format_module.get_dictcmds_from_str(string_cmd_msg)
+        cont.input_switcher(dict_msg)
+        dict_speeds = cont.get_speeds(arm)
+        string_speeds_msg = message_format_module.get_strcmds_from_dict(dict_speeds)
+        driver_client.send_message(string_speeds_msg)
 else:
     print("Done.\nEntering test mode:")
