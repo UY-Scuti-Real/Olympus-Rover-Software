@@ -254,7 +254,7 @@ class controller_state:
                                              * self.sensitivity
                                              * self.status["ARM_VERT"]))
         if self.grabber:
-            speeds.update({"a3": 180})
+            speeds.update({"a3": 90})
         else:
             speeds.update({"a3": 0})
         return speeds
