@@ -75,6 +75,52 @@ class cmd_filter:
             return None
 
 
+# command & control states
+class command:
+    def __init__(self, code, type, val_range=None,
+                 strfmt={"cmd": "code", "delim": ":", "val": "value"}):
+        if type == int or type == float:
+            if val_range is not None:
+                self.min_val = min(val_range)
+                self.max_val = max(val_range)
+            else:
+                raise ValueError("no value set for val_range \
+                                 \nspecify val_range = [min, max]")
+
+        self.code = code
+        self.val_type = type
+
+
+class state:
+    state_dict = {}
+
+    def __init__(self):
+        pass
+
+    def __eq__(self, compared_to):
+        if issubclass(compared_to, state):
+            is_equal = True
+            for code, value in self.state_dict.items():
+                if code in compared_to.state_dict:
+                    if value != compared_to.state_dict[code]:
+                        is_equal = False
+            return is_equal
+
+    def __repr__(self):
+        # just a nicer way of printing it out
+        code_str = value_str = ""
+        for code, value in self.state_dict.items():
+            # check value for formatting reasons
+            if type(value) == float or type(value) == int:
+                value = str(value)
+                if len(value) > 4:
+                    value = value[:4]
+            # build tabulated output
+            code_str += str(code) + '\t'
+            value_str += value + '\t'
+        return code_str + '\n' + value_str + '\n'
+
+
 base_format = {"header": str, "value": float, "delimiter": ':'}
 
 # these can be set once imported, will effect entire module
