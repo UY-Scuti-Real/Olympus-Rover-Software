@@ -1,7 +1,6 @@
 import math as m
 from modules import network_module
-from modules import message_format_module
-from modules import states
+from modules import command_formats
 from socket import gethostname
 """
 rover standards
@@ -81,10 +80,17 @@ def differential_drive(x, y, sensitivity=1):
     return speeds
 
 
-class rover_drive:
-    def __init__(self):
-        self.sensitivity = 1
-        self.drive_mode = 1
+def get_wheel_speeds(control_state):
+    if control_state['TOGL_DRV']:
+        drive_speeds = differential_drive(control_state['DRV_TURN'],
+                                          control_state['DRV_FWD'],
+                                          control_state['SET_SENS'])
+    else:
+        drive_speeds = gimbal_drive(control_state['DRV_TURN'],
+                                    control_state['DRV_FWD'],
+                                    control_state['SET_SENS'])
+    return drive_speeds
+
 
 
 # TRIG STUFF ==================================================================
@@ -109,159 +115,86 @@ def sine_rule(a, b, A):
 
 
 # ARM BULLSHIT ================================================================
-class rover_arm:
-    def __init__(self):
-        self.L1 = 10  # cm
-        self.L2 = 10  # cm
-        self.L3_check = self.L1**2 + self.L2**2
-        self.theta1 = 179  # IN FUCKING DEGREES
-        self.theta2 = 0.01  # DEGREES
+# class rover_arm:
+#     def __init__(self):
+#         self.L1 = 10  # cm
+#         self.L2 = 10  # cm
+#         self.L3_check = self.L1**2 + self.L2**2
+#         self.theta1 = 179  # IN FUCKING DEGREES
+#         self.theta2 = 0.01  # DEGREES
+#
+#     def inc_theta1(self, angle):
+#         self.theta1 = self.validate_angle(self.theta1 - angle)
+#         return {"a1": self.theta1}
+#
+#     def inc_theta2(self, angle):
+#         self.theta2 = self.validate_angle(self.theta2 - angle)
+#         return {"a2": self.theta2}
+#
+#     def rotate_arm(self, angle):
+#         theta1 = self.theta1
+#         theta1 += angle
+#         if theta1 > 180:
+#             self.theta1 = 180
+#         elif theta1 < 0:
+#             self.theta1 = 1
+#         else:
+#             self.theta1 = theta1
+#         print("cos t2\t{} \tt2 {:.0f} \t t1 {:.3f}".format(
+#             "!", self.theta2, self.theta1))
+#         return {"a1": self.theta1}
+#
+#     def extend_arm(self, length):
+#         L3init = self.get_L3()
+#         L3new = L3init + length
+#         if L3new < L3init and self.theta1 >= 179:
+#             theta2 = self.get_T2_from_L3(L3new)
+#             self.theta2 = self.validate_angle(theta2)
+#         else:
+#             T1primeinit = self.get_T1prime(L3init)
+#             if L3new >= self.L1 + self.L2:
+#                 L3new = (self.L1 + self.L2)*0.99
+#             theta2 = self.get_T2_from_L3(L3new)
+#             if theta2 > 180:
+#                 self.theta2 = 179
+#             elif theta2 < 0:
+#                 self.theta2 = 1
+#             else:
+#                 self.theta2 = theta2
+#             T1primenew = self.get_T1prime(L3new)
+#             self.theta1 = self.validate_angle(
+#                 self.theta1 - (T1primenew-T1primeinit))
+#         return{"a1": self.theta1, "a2": self.theta2}
+#
+#     def get_L3(self):
+#         L3squared = self.L1**2 + self.L2**2 - 2 * \
+#             self.L1*self.L2*m.cos(rad(self.theta2))
+#         return L3squared**0.5
+#
+#     def get_T2_from_L3(self, L3):
+#         cosT2 = (L3**2 - self.L1**2 - self.L2**2)/(-2*self.L1*self.L2)
+#         T2 = deg(m.acos(cosT2))
+#         return T2
+#
+#     def get_T1prime(self, L3):
+#         sinT1diff = self.L1/L3 * m.sin(rad(self.theta2))
+#         # might be self.l2 there instead...
+#         T1diff = deg(m.asin(abs(sinT1diff)))
+#         return self.theta1 - T1diff
+#
+#     def validate_angle(self, angle):
+#         if angle >= 180:
+#             angle = 179
+#         elif angle <= 0:
+#             angle = 1
+#         return angle
 
-    def inc_theta1(self, angle):
-        self.theta1 = self.validate_angle(self.theta1 - angle)
-        return {"a1": self.theta1}
-
-    def inc_theta2(self, angle):
-        self.theta2 = self.validate_angle(self.theta2 - angle)
-        return {"a2": self.theta2}
-
-    def rotate_arm(self, angle):
-        theta1 = self.theta1
-        theta1 += angle
-        if theta1 > 180:
-            self.theta1 = 180
-        elif theta1 < 0:
-            self.theta1 = 1
-        else:
-            self.theta1 = theta1
-        print("cos t2\t{} \tt2 {:.0f} \t t1 {:.3f}".format(
-            "!", self.theta2, self.theta1))
-        return {"a1": self.theta1}
-
-    def extend_arm(self, length):
-        L3init = self.get_L3()
-        L3new = L3init + length
-        if L3new < L3init and self.theta1 >= 179:
-            theta2 = self.get_T2_from_L3(L3new)
-            self.theta2 = self.validate_angle(theta2)
-        else:
-            T1primeinit = self.get_T1prime(L3init)
-            if L3new >= self.L1 + self.L2:
-                L3new = (self.L1 + self.L2)*0.99
-            theta2 = self.get_T2_from_L3(L3new)
-            if theta2 > 180:
-                self.theta2 = 179
-            elif theta2 < 0:
-                self.theta2 = 1
-            else:
-                self.theta2 = theta2
-            T1primenew = self.get_T1prime(L3new)
-            self.theta1 = self.validate_angle(
-                self.theta1 - (T1primenew-T1primeinit))
-        return{"a1": self.theta1, "a2": self.theta2}
-
-    def get_L3(self):
-        L3squared = self.L1**2 + self.L2**2 - 2 * \
-            self.L1*self.L2*m.cos(rad(self.theta2))
-        return L3squared**0.5
-
-    def get_T2_from_L3(self, L3):
-        cosT2 = (L3**2 - self.L1**2 - self.L2**2)/(-2*self.L1*self.L2)
-        T2 = deg(m.acos(cosT2))
-        return T2
-
-    def get_T1prime(self, L3):
-        sinT1diff = self.L1/L3 * m.sin(rad(self.theta2))
-        # might be self.l2 there instead...
-        T1diff = deg(m.asin(abs(sinT1diff)))
-        return self.theta1 - T1diff
-
-    def validate_angle(self, angle):
-        if angle >= 180:
-            angle = 179
-        elif angle <= 0:
-            angle = 1
-        return angle
+def update_command_from_control(command_state, control_state):
+    pass
 
 
 # CONTROLLER===================================================================
-class controller_state:
-    def __init__(self):
-        self.status = {
-            "DRV_FWD": 0,
-            "DRV_TURN": 0,
-            "ARM_VERT": 0,
-            "ARM_HORI": 0,
-            }
-        self.sensitivity_fudge = 0.75
-        self.drive_mode = True
-        self.sensitivity = 1
-        self.arm_mode = True
-        self.grabber = True
-        self.payload_bay = True
-        self.yeet = False
-        self.arm_deploy = True
-        self.fudge_angle = 1
-        self.fudge_length = 1
-
-    def input_switcher(self, dictforminput):
-        for key, value in dictforminput.items():
-            self.status[key] = float(value)
-            if key == "TOGL_DRV" and float(value) == 1:
-                self.drive_mode = toggle(self.drive_mode)
-            elif key == "TOGL_GRB" and float(value) == 1:
-                self.grabber = toggle(self.grabber)
-            elif key == "TOGL_ARM":
-                # print("TOGGLED ARM MODE")
-                self.arm_mode = toggle(self.arm_mode)
-            elif key == "TOGL_SEN":
-                self.sensitivity = toggle(self.sensitivity, self.sensitivity)
-            elif key == "YEET":
-                self.yeet = True
-            elif key == "TOGL_MSC" and float(value) == 1:
-                self.arm_deploy = toggle(self.arm_deploy)
-            elif key == "SET_SENS":
-                self.sensitivity = 1-float(value)*self.sensitivity_fudge
-                # print("sens: ", value)
-
-    def get_speeds(self, arm):
-        # print(self.status)
-        speeds = {}
-        if self.drive_mode:
-            speeds.update(gimbal_drive(
-                self.status["DRV_TURN"],
-                self.status["DRV_FWD"], self.sensitivity))
-        else:
-            speeds.update(differential_drive(
-                self.status["DRV_TURN"],
-                self.status["DRV_FWD"], self.sensitivity))
-        if "DBW" not in MODE:
-            if self.arm_mode:
-                # print("Extending arm")
-                speeds.update(arm.extend_arm(self.fudge_length
-                                             * self.sensitivity
-                                             * self.status["ARM_VERT"]))
-            else:
-                # print("rotating arm")
-                speeds.update(arm.rotate_arm(self.fudge_angle
-                                             * self.sensitivity
-                                             * self.status["ARM_VERT"]))
-        elif "DBW" in MODE:
-            if self.arm_mode:
-                speeds.update(arm.inc_theta2(self.fudge_angle
-                                             * self.sensitivity
-                                             * self.status["ARM_VERT"]))
-            else:
-                speeds.update(arm.inc_theta1(-self.fudge_angle
-                                             * self.sensitivity
-                                             * self.status["ARM_VERT"]))
-        if self.grabber:
-            speeds.update({"a3": 90})
-        else:
-            speeds.update({"a3": 0})
-        return speeds
-
-
+control_state = command_formats.state()
 # MAIN ========================================================================
 if 'localhost' in MODE:
     address = gethostname()
@@ -285,10 +218,11 @@ print("Done.", end='\n')
 controller_server.get_connection()
 while 'test' not in MODE:
     str_cmd_msg = controller_server.get_messages()
-    dict_msg = message_format_module.get_valid_cmds(str_cmd_msg)
-    cont.input_switcher(dict_msg)
-    dict_speeds = cont.get_speeds(arm)
-    str_speeds_msg = message_format_module.get_strcmds_from_dict(dict_speeds)
+    dict_msg = command_formats.get_valid_cmds(str_cmd_msg)
+    # update control state
+    # calculate command state
+    # derive command dict
+    str_speeds_msg = command_formats.get_strcmds_from_dict(dict_speeds)
     driver_client.send_message(str_speeds_msg)
 
 print("Entering test mode:")

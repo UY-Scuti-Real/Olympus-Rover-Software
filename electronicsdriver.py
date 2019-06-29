@@ -2,13 +2,26 @@
 from modules import network_module
 from modules import message_format_module
 # MODE ========================================================================
-MODE = [1]
+MODE = [0]
+try:
+    import pigpio
+    pwm_control = pigpio.pi()
+    MODE = [2]
+    print("connected to pigpio")
+    import RPi.GPIO as GPIO
+    GPIO.setmode(GPIO.BCM)
+    MODE = [2]
+    
+except (NotImplementedError, ImportError):
+    print("unable to connect to pigpio")
+    
 try:
     from adafruit_servokit import ServoKit
     kit = ServoKit(channels=16)
+    MODE = [1]
 except (NotImplementedError, ImportError):
-    print("unable to access electronics, moving to print mode")
-    MODE = [0]
+    print("unable to access PWM control board")
+
 
 # =============================================================================
 """
@@ -95,11 +108,39 @@ class standard_servo(servo):
                                                       self.max_pulse)
 
 
+class pwm_servo(servo):
+    def __init__(self, GPIO_pin, min_pulse=500, max_pulse=2500):
+        # super(standard_servo, self).__init__(channel, min_pulse, max_pulse)
+        super().__init__(GPIO_pin, min_pulse, max_pulse)
+        GPIO.setup(GPIO_pin, GPIO.OUT)
+        pwm_control.set_mode(GPIO_pin, pigpio.OUTPUT)
+##        self.p = GPIO.PWM(GPIO_pin, 50)
+##        self.p.start(2.5)
+
+    def __call__(self, angle, max_angle=180):
+        fraction_angle = angle/max_angle
+        angle_pulse = (self.max_pulse - self.min_pulse) * fraction_angle + self.min_pulse
+        if 0<= fraction_angle <= 1:
+            pwm_control.set_servo_pulsewidth(self.channel, angle_pulse)
+##            self.p.ChangeDutyCycle(angle/10 + 2.5)
+        else:
+            pass
+
+
+class pwm_servo_wheel(pwm_servo):
+
+    def __call__(self, angle, max_angle=180):
+        angle = angle*90 + 90
+        super().__call__(angle, max_angle)
+
+
 def get_map_from_mode(mode):
     if 0 in mode:
         return print_map
     elif 1 in mode:
         return electronics_map
+    elif 2 in mode:
+        return pwm_map
 
 
 def update(speeds):
@@ -117,6 +158,10 @@ def update(speeds):
 def debug_print(statement):
     str_num = str(statement)[:4]
     print(str_num, " ",  end='')
+
+
+def debug_null(cmd):
+    pass
 
 # MAIN ==============================================================
 # wheel declartions (calibration needed)
@@ -138,6 +183,21 @@ grabber = standard_servo(12)
 waist = standard_servo(13)
 cargo = standard_servo(14)
 
+# pwm declarations (only used as backup)
+#pwm_wheel1 = pwm_servo(0)
+#pwm_wheel2 = pwm_servo(1)
+pwm_wheel3 = pwm_servo_wheel(2)
+pwm_wheel4 = pwm_servo_wheel(3)
+pwm_wheel5 = pwm_servo_wheel(4)
+pwm_wheel6 = pwm_servo_wheel(5)
+pwm_gimbal1 = pwm_servo(6)
+pwm_gimbal2 = pwm_servo(7)
+pwm_gimbal3 = pwm_servo(8)
+pwm_gimbal4 = pwm_servo(9)
+pwm_shoulder = pwm_servo(10)
+pwm_elbow = pwm_servo(11)
+pwm_grabber = pwm_servo(12)
+
 print_map = {"w1": debug_print,
              "w2": debug_print,
              "w3": debug_print,
@@ -154,6 +214,23 @@ print_map = {"w1": debug_print,
              "a4": debug_print,
              "p4": debug_print,
              }
+
+pwm_map = {"w1": debug_null,
+         "w2": debug_null,
+         "w3": pwm_wheel3,
+         "w4": pwm_wheel4,
+         "w5": pwm_wheel5,
+         "w6": pwm_wheel6,
+         "g1": pwm_gimbal1,
+         "g2": pwm_gimbal2,
+         "g3": pwm_gimbal3,
+         "g4": pwm_gimbal4,
+         "a1": pwm_shoulder,
+         "a2": pwm_elbow,
+         "a3": pwm_grabber,
+         "a4": debug_null,
+         "p4": debug_null,
+         }
 
 electronics_map = {"w1": wheel1,
                    "w2": wheel2,
@@ -187,8 +264,9 @@ null_map = {"w1": 0,
             "a3": 0,
             }
 
+
 print("Starting driver")
-command_server = network_module.make_server(5000)
+command_server = network_module.make_server(5000, '192.168.1.10')
 command_server.get_connection()
 mode_map = get_map_from_mode(MODE)
 while 1:

@@ -94,9 +94,6 @@ class command:
 class state:
     state_dict = {}
 
-    def __init__(self):
-        pass
-
     def __eq__(self, compared_to):
         if issubclass(compared_to, state):
             is_equal = True
@@ -122,7 +119,6 @@ class state:
 
 
 base_format = {"header": str, "value": float, "delimiter": ':'}
-
 # these can be set once imported, will effect entire module
 default_format = base_format
 default_filter = cmd_filter(default_format)
