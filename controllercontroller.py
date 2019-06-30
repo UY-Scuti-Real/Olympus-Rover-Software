@@ -27,6 +27,7 @@ class state:
                          'BTN_WEST': 0, 'BTN_SOUTH': 0, 'BTN_EAST': 0, 'BTN_NORTH': 0  # buttons
                          }
 
+# your mum big gay
 
 def get_changes(events, cont):
     send_dict = {}

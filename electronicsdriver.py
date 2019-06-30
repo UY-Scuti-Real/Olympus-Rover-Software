@@ -1,6 +1,6 @@
 # Driver
 from modules import network_module
-from modules import message_format_module
+from modules import command_formats
 # MODE ========================================================================
 MODE = [0]
 try:
@@ -11,10 +11,10 @@ try:
     import RPi.GPIO as GPIO
     GPIO.setmode(GPIO.BCM)
     MODE = [2]
-    
+
 except (NotImplementedError, ImportError):
     print("unable to connect to pigpio")
-    
+
 try:
     from adafruit_servokit import ServoKit
     kit = ServoKit(channels=16)
@@ -86,7 +86,7 @@ class continous_servo(servo):
 
     def calibrate(self):
         kit.continuous_servo[self.channel].set_pulse_width_range(self.min_pulse,
-                                                                self.max_pulse)
+                                                                 self.max_pulse)
 
 
 class standard_servo(servo):
@@ -119,8 +119,9 @@ class pwm_servo(servo):
 
     def __call__(self, angle, max_angle=180):
         fraction_angle = angle/max_angle
-        angle_pulse = (self.max_pulse - self.min_pulse) * fraction_angle + self.min_pulse
-        if 0<= fraction_angle <= 1:
+        angle_pulse = (self.max_pulse - self.min_pulse) * \
+            fraction_angle + self.min_pulse
+        if 0 <= fraction_angle <= 1:
             pwm_control.set_servo_pulsewidth(self.channel, angle_pulse)
 ##            self.p.ChangeDutyCycle(angle/10 + 2.5)
         else:
@@ -162,6 +163,7 @@ def debug_print(statement):
 
 def debug_null(cmd):
     pass
+
 
 # MAIN ==============================================================
 # wheel declartions (calibration needed)
@@ -216,21 +218,21 @@ print_map = {"w1": debug_print,
              }
 
 pwm_map = {"w1": debug_null,
-         "w2": debug_null,
-         "w3": pwm_wheel3,
-         "w4": pwm_wheel4,
-         "w5": pwm_wheel5,
-         "w6": pwm_wheel6,
-         "g1": pwm_gimbal1,
-         "g2": pwm_gimbal2,
-         "g3": pwm_gimbal3,
-         "g4": pwm_gimbal4,
-         "a1": pwm_shoulder,
-         "a2": pwm_elbow,
-         "a3": pwm_grabber,
-         "a4": debug_null,
-         "p4": debug_null,
-         }
+           "w2": debug_null,
+           "w3": pwm_wheel3,
+           "w4": pwm_wheel4,
+           "w5": pwm_wheel5,
+           "w6": pwm_wheel6,
+           "g1": pwm_gimbal1,
+           "g2": pwm_gimbal2,
+           "g3": pwm_gimbal3,
+           "g4": pwm_gimbal4,
+           "a1": pwm_shoulder,
+           "a2": pwm_elbow,
+           "a3": pwm_grabber,
+           "a4": debug_null,
+           "p4": debug_null,
+           }
 
 electronics_map = {"w1": wheel1,
                    "w2": wheel2,
@@ -271,5 +273,5 @@ command_server.get_connection()
 mode_map = get_map_from_mode(MODE)
 while 1:
     string_messages = command_server.get_messages()
-    cmd_dict = message_format_module.get_valid_cmds(string_messages)
+    cmd_dict = command_formats.get_valid_cmds(string_messages)
     update(cmd_dict)
