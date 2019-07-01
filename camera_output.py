@@ -6,7 +6,7 @@ This is a dangerous approach, though, because tkinter doesn't play
 well with cleanup. Pygame, however, deals with it quite well, but requires
 setup...
 """
-import network_module
+import modules.network_module as network_module
 
 server = network_module.make_server(5002, '192.168.1.9')
 server.get_connection()

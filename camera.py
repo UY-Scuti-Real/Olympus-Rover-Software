@@ -1,5 +1,5 @@
 # camera streamer
-import network_module
+import modules.network_module as network_module
 import time
 MODE = {'IP': 'localhost'}
 print("=== PiCamera streamer start ===")
@@ -24,12 +24,12 @@ try:
     camera = PiCamera()
     # adjust light levels requires 2 seconds appaz
     time.sleep(2)
-    MODE['filepath':' /home/pi/Desktop/capture.png']
-    MODE['cam_fun':camera.capture]
+    MODE['filepath'] = ' /home/pi/Desktop/capture.png'
+    MODE['cam_fun'] = camera.capture
 except Exception as e:
     print(e, "while trying Picamera")
-    MODE['filepath': '"Test Files"/test.png']
-    MODE['cam_fun': debug_null]
+    MODE['filepath'] = '"Test Files"/test.png'
+    MODE['cam_fun'] = debug_null
 
 
 client = network_module.make_client()
