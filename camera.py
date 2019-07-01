@@ -1,7 +1,7 @@
 # camera streamer
 import modules.network_module as network_module
 import time
-MODE = {'IP': 'localhost'}
+MODE = {'IP': '192.168.1.9'}
 print("=== PiCamera streamer start ===")
 
 
@@ -11,7 +11,7 @@ def debug_null(*args):
 
 def get_image_bytes():
     # make the picture
-    MODE['cam_fun']()
+    MODE['cam_fun'](MODE['filepath'])
     # get read bytes from image
     file = open(MODE['filepath'], 'rb')
     img_bytes_str = file.read().decode()
