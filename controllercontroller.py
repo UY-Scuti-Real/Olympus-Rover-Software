@@ -59,15 +59,15 @@ command_map = {'ABS_Y': 'DRV_FWD',
                'BTN_TR': 'TOGL_ARM',  # bumpers
                'ABS_HAT0X': 'U',
                'ABS_HAT0Y': 'TOGL_MSC',  # dpad
-               'BTN_START': 'U',
-               'BTN_SELECT': 'U',  # selectors
+               'BTN_START': 'TOGL_DM1',
+               'BTN_SELECT': 'TOGL_DM2',  # selectors
                'ABS_RY': 'ARM_VERT',
                'ABS_RX': 'ARM_HORI',
                'ABS_RZ': 'SET_SENS',
                'BTN_THUMBR': 'U',  # right stick
                'BTN_WEST': 'TOGL_GRB',
                'BTN_SOUTH': 'YEET',
-               'BTN_EAST': 'TOGL_DMP',
+               'BTN_EAST': 'U',
                'BTN_NORTH': 'TOGL_DRV'  # buttons
                }
 

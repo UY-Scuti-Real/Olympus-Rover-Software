@@ -37,8 +37,8 @@ on, output number respectively
 
 """
 # MODE = ["DBW", "localhost"]
-MODE = ["DBW", "ethernet", 'sendall']
-# MODE = ["DBW"]
+# MODE = ["DBW", "ethernet", 'sendall']
+MODE = ["DBW", "wifi", "sendall"]
 # MODE = [0]
 # MODE = [1]
 
@@ -196,6 +196,8 @@ class controller_state:
         self.sensitivity = 1
         self.arm_mode = True
         self.grabber = True
+        self.dump1 = False
+        self.dump2 = False
         self.payload_bay = True
         self.yeet = False
         self.arm_deploy = True
@@ -220,6 +222,10 @@ class controller_state:
                 self.arm_deploy = toggle(self.arm_deploy)
             elif key == "SET_SENS":
                 self.sensitivity = 1-float(value)*self.sensitivity_fudge
+            elif key == "TOGL_DM1" and float(value) == 1:
+                self.dump1 = toggle(self.dump1)
+            elif key == "TOGL_DM2" and float(value) == 1:
+                self.dump2 = toggle(self.dump2)
                 # print("sens: ", value)
 
     def get_speeds(self, arm):
@@ -257,6 +263,10 @@ class controller_state:
             speeds.update({"a3": 90})
         else:
             speeds.update({"a3": 0})
+        if self.dump1 and self.dump2:
+            speeds['p1'] = 90
+        else:
+            speeds['p1'] = 0
         return speeds
 
 

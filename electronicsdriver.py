@@ -4,17 +4,17 @@ from modules import network_module
 from modules import message_format_module
 # MODE ========================================================================
 MODE = [0]
-try:
-    import pigpio
-    pwm_control = pigpio.pi()
-    MODE = [2]
-    print("connected to pigpio")
-    import RPi.GPIO as GPIO
-    GPIO.setmode(GPIO.BCM)
-    MODE = [2]
-
-except (NotImplementedError, ImportError):
-    print("unable to connect to pigpio")
+# try:
+#     import pigpio
+#     pwm_control = pigpio.pi()
+#     MODE = [2]
+#     print("connected to pigpio")
+#     import RPi.GPIO as GPIO
+#     GPIO.setmode(GPIO.BCM)
+#     MODE = [2]
+#
+# except (NotImplementedError, ImportError):
+#     print("unable to connect to pigpio")
 
 try:
     from adafruit_servokit import ServoKit
@@ -182,17 +182,18 @@ cargo = standard_servo(14)
 # pwm declarations (only used as backup)
 #pwm_wheel1 = pwm_servo(0)
 #pwm_wheel2 = pwm_servo(1)
-pwm_wheel3 = pwm_servo_wheel(2)
-pwm_wheel4 = pwm_servo_wheel(3)
-pwm_wheel5 = pwm_servo_wheel(4)
-pwm_wheel6 = pwm_servo_wheel(5)
-pwm_gimbal1 = pwm_servo(6)
-pwm_gimbal2 = pwm_servo(7)
-pwm_gimbal3 = pwm_servo(8)
-pwm_gimbal4 = pwm_servo(9)
-pwm_shoulder = pwm_servo(10)
-pwm_elbow = pwm_servo(11)
-pwm_grabber = pwm_servo(12)
+
+# pwm_wheel3 = pwm_servo_wheel(2)
+# pwm_wheel4 = pwm_servo_wheel(3)
+# pwm_wheel5 = pwm_servo_wheel(4)
+# pwm_wheel6 = pwm_servo_wheel(5)
+# pwm_gimbal1 = pwm_servo(6)
+# pwm_gimbal2 = pwm_servo(7)
+# pwm_gimbal3 = pwm_servo(8)
+# pwm_gimbal4 = pwm_servo(9)
+# pwm_shoulder = pwm_servo(10)
+# pwm_elbow = pwm_servo(11)
+# pwm_grabber = pwm_servo(12)
 
 print_map = {"w1": debug_print,
              "w2": debug_print,
@@ -208,25 +209,25 @@ print_map = {"w1": debug_print,
              "a2": debug_print,
              "a3": debug_print,
              "a4": debug_print,
-             "p4": debug_print,
+             "p1": debug_print,
              }
 
-pwm_map = {"w1": debug_null,
-           "w2": debug_null,
-           "w3": pwm_wheel3,
-           "w4": pwm_wheel4,
-           "w5": pwm_wheel5,
-           "w6": pwm_wheel6,
-           "g1": pwm_gimbal1,
-           "g2": pwm_gimbal2,
-           "g3": pwm_gimbal3,
-           "g4": pwm_gimbal4,
-           "a1": pwm_shoulder,
-           "a2": pwm_elbow,
-           "a3": pwm_grabber,
-           "a4": debug_null,
-           "p4": debug_null,
-           }
+# pwm_map = {"w1": debug_null,
+#            "w2": debug_null,
+#            "w3": pwm_wheel3,
+#            "w4": pwm_wheel4,
+#            "w5": pwm_wheel5,
+#            "w6": pwm_wheel6,
+#            "g1": pwm_gimbal1,
+#            "g2": pwm_gimbal2,
+#            "g3": pwm_gimbal3,
+#            "g4": pwm_gimbal4,
+#            "a1": pwm_shoulder,
+#            "a2": pwm_elbow,
+#            "a3": pwm_grabber,
+#            "a4": debug_null,
+#            "p4": debug_null,
+#            }
 
 electronics_map = {"w1": wheel1,
                    "w2": wheel2,
@@ -262,7 +263,7 @@ null_map = {"w1": 0,
 
 
 print("Starting driver")
-command_server = network_module.make_server(5000, '192.168.1.10')
+command_server = network_module.make_server(5000, '192.168.1.11')
 command_server.get_connection()
 mode_map = get_map_from_mode(MODE)
 while 1:
