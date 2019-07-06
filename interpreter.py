@@ -114,6 +114,7 @@ class rover_arm:
         self.L3_check = self.L1**2 + self.L2**2
         self.theta1 = 179  # IN FUCKING DEGREES
         self.theta2 = 0.01  # DEGREES
+        self.base_rotation = 90
 
     def inc_theta1(self, angle):
         self.theta1 = self.validate_angle(self.theta1 - angle)
@@ -122,6 +123,10 @@ class rover_arm:
     def inc_theta2(self, angle):
         self.theta2 = self.validate_angle(self.theta2 - angle)
         return {"a2": self.theta2}
+
+    def inc_base_rot(self, angle):
+        self.base_rotation = self.validate_angle(self.base_rotation - angle)
+        return {"a4": self.base_rotation}
 
     def rotate_arm(self, angle):
         theta1 = self.theta1
@@ -222,10 +227,12 @@ class controller_state:
                 self.arm_deploy = toggle(self.arm_deploy)
             elif key == "SET_SENS":
                 self.sensitivity = 1-float(value)*self.sensitivity_fudge
-            elif key == "TOGL_DM1" and float(value) == 1:
+            elif key == "TOGL_DM1":
+                # print(key, value)
                 self.dump1 = toggle(self.dump1)
-            elif key == "TOGL_DM2" and float(value) == 1:
+            elif key == "TOGL_DM2":
                 self.dump2 = toggle(self.dump2)
+                # print(key, value)
                 # print("sens: ", value)
 
     def get_speeds(self, arm):
@@ -259,14 +266,18 @@ class controller_state:
                 speeds.update(arm.inc_theta1(-self.fudge_angle
                                              * self.sensitivity
                                              * self.status["ARM_VERT"]))
+
+        speeds.update(arm.inc_base_rot(self.fudge_angle
+                                       * self.sensitivity
+                                       * self.status["ARM_HORI"]))
         if self.grabber:
             speeds.update({"a3": 90})
         else:
             speeds.update({"a3": 0})
         if self.dump1 and self.dump2:
-            speeds['p1'] = 90
-        else:
             speeds['p1'] = 0
+        else:
+            speeds['p1'] = 110
         return speeds
 
 

@@ -177,7 +177,7 @@ shoulder = standard_servo(10, 1000, 2550)
 elbow = standard_servo(11, 400, 2100)
 grabber = standard_servo(12)
 waist = standard_servo(13)
-cargo = standard_servo(14)
+cargo = standard_servo(14, 400, 2500)
 
 # pwm declarations (only used as backup)
 #pwm_wheel1 = pwm_servo(0)
@@ -259,13 +259,16 @@ null_map = {"w1": 0,
             "a1": 180,
             "a2": 0,
             "a3": 0,
+            "a4": 90,
             }
 
 
 print("Starting driver")
+mode_map = get_map_from_mode(MODE)
+update(null_map)
 command_server = network_module.make_server(5000, '192.168.1.11')
 command_server.get_connection()
-mode_map = get_map_from_mode(MODE)
+update(null_map)
 while 1:
     string_messages = command_server.get_messages()
     cmd_dict = message_format_module.get_valid_cmds(string_messages)
