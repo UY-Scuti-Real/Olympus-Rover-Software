@@ -3,6 +3,8 @@ from modules import network_module
 from modules import command_formats
 # MODE ========================================================================
 MODE = [0]
+socket_timeout = 2
+time_base = 1
 try:
     import pigpio
     pwm_control = pigpio.pi()
@@ -67,7 +69,8 @@ class servo:
         pass
 
     def calibrate(self):
-        pass
+        kit.servo[self.channel].set_pulse_width_range(self.min_pulse,
+                                                      self.max_pulse)
 
 
 class continous_servo(servo):
@@ -84,9 +87,6 @@ class continous_servo(servo):
         else:
             pass
 
-    def calibrate(self):
-        kit.continuous_servo[self.channel].set_pulse_width_range(self.min_pulse,
-                                                                 self.max_pulse)
 
 
 class standard_servo(servo):
@@ -103,9 +103,15 @@ class standard_servo(servo):
         else:
             pass
 
-    def calibrate(self):
-        kit.servo[self.channel].set_pulse_width_range(self.min_pulse,
-                                                      self.max_pulse)
+
+class angle_memory_servo(standard_servo):
+    self.angle = 0
+    def __call__(self, rotation_rate_fraction):
+        angle_change = rotation_rate_fraction * socket_timeout * time_base
+        if 0 <= self.angle + angle_change <= 180:
+            self.angle += angle_change
+            super().__call__(self.angle)
+
 
 
 class pwm_servo(servo):
@@ -174,13 +180,13 @@ wheel4 = continous_servo(3)
 wheel5 = continous_servo(4)
 wheel6 = continous_servo(5)
 # gimbal declarations (calibration needed)
-gimbal1 = standard_servo(6)
-gimbal2 = standard_servo(7)
-gimbal3 = standard_servo(8)
-gimbal4 = standard_servo(9)
+gimbal1 = standard_servo(6, 500, 2400)
+gimbal2 = standard_servo(7, 550, 2275)
+gimbal3 = standard_servo(8, 600, 2350)
+gimbal4 = standard_servo(9, 700, 2525)
 # arm declartions (calibration needed)
-shoulder = standard_servo(10)
-elbow = standard_servo(11)
+shoulder = standard_servo(10, 1000, 2550)
+elbow = standard_servo(11, 400, 2100)
 grabber = standard_servo(12)
 waist = standard_servo(13)
 cargo = standard_servo(14)
