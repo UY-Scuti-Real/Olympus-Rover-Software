@@ -3,7 +3,7 @@ from modules import network_module
 from modules import command_formats
 from socket import gethostname
 """
-rover standards
+--- rover standards ---
 
 where # is a wheel. adjacent number shows wheel number
 from a top down position. wheel codonr is wn, where n is wheel
@@ -35,13 +35,15 @@ rotation #4
 if the rover has debug LEDs/sounds, should be presented as
 on, output number respectively
 
-"""
-# MODE = ["DBW", "localhost"]
-MODE = ["DBW", "ethernet", 'sendall']
-# MODE = ["DBW"]
-# MODE = [0]
-# MODE = [1]
+--- states ---
+control state, interpreter state
 
+control
+this is the state the controller is in. updates from controller connection
+
+interpreter
+state of the electronics signal. gets transmitted as formatted strings
+"""
 
 
 def toggle(x, number=False):
@@ -80,7 +82,7 @@ def differential_drive(x, y, sensitivity=1):
     return speeds
 
 
-def get_wheel_speeds(control_state):
+def get_wheel_speeds(_, control_state):
     if control_state['TOGL_DRV']:
         drive_speeds = differential_drive(control_state['DRV_TURN'],
                                           control_state['DRV_FWD'],
@@ -189,13 +191,40 @@ def sine_rule(a, b, A):
 #             angle = 1
 #         return angle
 
-def update_command_from_control(command_state, control_state):
+def update_interp_state(interpreter_state=interp, control_state=cont):
+    wheel_update = get_wheel_speeds(interpreter_state, control_state)
+    arm_update = get_arm_speeds(interpreter_state, control_state)
+    interpreter_state.update()
+
+
+def update_command_state(dict_msg, control_state=cont):
+    control_state.update(control_state)
+
+
+def debug_null(*args):
     pass
 
-
-# CONTROLLER===================================================================
-control_state = command_formats.state()
 # MAIN ========================================================================
+# c_to_c_map = {"DRV_FWD": debug_null,
+#               "DRV_TURN": debug_null,
+#               "TOGL_DRV": debug_null,
+#               "TOGL_MSC": debug_null,
+#               "ARM_VERT": debug_null,
+#               "ARM_HORI": debug_null,
+#               "SET_SENS": debug_null,
+#               "TOGL_GRB": debug_null,
+#               "YEET": debug_null,
+#               "TOGL_DMP": debug_null,
+#               "TOGL_ARM": debug_null,
+#             }
+
+print("===INTERPRETER START===")
+# MODE = ["DBW", "localhost"]
+MODE = ["DBW", "ethernet", 'sendall']
+# MODE = ["DBW"]
+# MODE = [0]
+# MODE = [1]
+
 if 'localhost' in MODE:
     address = gethostname()
     timeout = 0.5
@@ -206,12 +235,14 @@ elif 'ethernet' in MODE:
     address = '192.168.1.10'
     timeout = 5e-3
 
-print("===INTERPRETER START===")
+print("MODE options: ", *MODE)
 print("creating sockets & classes... ", end='')
 controller_server = network_module.make_server(5001, timeout=timeout)
 driver_client = network_module.make_client()
 arm = rover_arm()
-cont = controller_state()
+# cont = controller_state()
+cont = command_formats.state()
+interp = command_formats.state()
 print("Done. \nconnecting to electronics....", end='')
 driver_client.connect_to(5000, address)
 print("Done.", end='\n')

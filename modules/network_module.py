@@ -44,23 +44,27 @@ class client_socket:
                 self.conn_stat = True
             except (ConnectionRefusedError):
                 time.sleep(3)
-                network_msg_print("could not connect to {} (refused), trying again...".format(self.target))
+                network_msg_print(
+                    "could not connect to {} (refused), trying again...".format(self.target))
             except (OSError):
                 time.sleep(3)
                 self.sock.close()
                 self.sock = make_stream_socket()
-                network_msg_print("could not connect to {} (dead socket), cleaning up...".format(self.target))
+                network_msg_print(
+                    "could not connect to {} (dead socket), cleaning up...".format(self.target))
         network_msg_print("done")
         self.sock.setblocking(0)
         self.conn_stat = True
 
-    def send_message(self, msg):
+    def send_message(self, msg, bytes_msg=False):
         if self.conn_stat:
             _, writeable, errors = select.select([], [self.sock],
                                                  [self.sock], self.timeout)
             if len(writeable) > 0:
                 try:
-                    writeable[0].send(msg.encode())
+                    if type(msg) == str:
+                        msg = msg.encode()
+                    writeable[0].send(msg)
                 except (ConnectionResetError, ConnectionAbortedError):
                     self.conn_stat = False
                     self.connect_to(self.target[1], self.target[0])
@@ -105,7 +109,7 @@ class server_socket:
         self.sock.listen(0)
         self.sock.setblocking(0)
 
-    def get_messages(self):
+    def get_messages(self, bytes_msg=False):
         msg = None
         try:
             readable, _, errors = select.select([self.connection], [],
@@ -125,7 +129,9 @@ class server_socket:
             elif len(readable) > 0:
                 # socket readable
                 self.total_timeout_time = 0
-                msg = readable[0].recv(2048).decode()
+                msg = readable[0].recv(2048)
+                if not bytes_msg:
+                    msg = msg.decode()
         except ConnectionResetError as e:
             network_msg_print("connection failed: {}\nreaquiring".format(e))
             self.get_connection()

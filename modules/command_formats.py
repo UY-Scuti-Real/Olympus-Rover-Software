@@ -93,6 +93,8 @@ class command:
 
 class state:
     state_dict = {}
+    def update(self, dictionary):
+        self.state_dict.update(dictionary)
 
     def __eq__(self, compared_to):
         if issubclass(compared_to, state):
@@ -152,3 +154,24 @@ def get_valid_cmds(string_message,
     cmd_dict = get_dictcmds_from_str(string_message)
     valid_cmds = validate_cmds(cmd_dict, cmd_fltr=default_filter)
     return valid_cmds
+
+
+command_map = {'ABS_Y':      'DRV_FWD',
+               'ABS_X':      'DRV_TURN',
+               'ABS_Z':      'U',
+               'BTN_THUMBL': 'U',  # left stick
+               'BTN_TL':     'U',
+               'BTN_TR':     'TOGL_ARM',  # bumpers
+               'ABS_HAT0X':  'U',
+               'ABS_HAT0Y':  'TOGL_MSC',  # dpad
+               'BTN_START':  'U',
+               'BTN_SELECT': 'U',  # selectors
+               'ABS_RY':     'ARM_VERT',
+               'ABS_RX':     'ARM_HORI',
+               'ABS_RZ':     'SET_SENS',
+               'BTN_THUMBR': 'U',  # right stick
+               'BTN_WEST':   'TOGL_GRB',
+               'BTN_SOUTH':  'YEET',
+               'BTN_EAST':   'TOGL_DMP',
+               'BTN_NORTH':  'TOGL_DRV'  # buttons
+               }
