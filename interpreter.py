@@ -116,80 +116,15 @@ def sine_rule(a, b, A):
     return m.asin(sinb)
 
 
-# ARM BULLSHIT ================================================================
-# class rover_arm:
-#     def __init__(self):
-#         self.L1 = 10  # cm
-#         self.L2 = 10  # cm
-#         self.L3_check = self.L1**2 + self.L2**2
-#         self.theta1 = 179  # IN FUCKING DEGREES
-#         self.theta2 = 0.01  # DEGREES
-#
-#     def inc_theta1(self, angle):
-#         self.theta1 = self.validate_angle(self.theta1 - angle)
-#         return {"a1": self.theta1}
-#
-#     def inc_theta2(self, angle):
-#         self.theta2 = self.validate_angle(self.theta2 - angle)
-#         return {"a2": self.theta2}
-#
-#     def rotate_arm(self, angle):
-#         theta1 = self.theta1
-#         theta1 += angle
-#         if theta1 > 180:
-#             self.theta1 = 180
-#         elif theta1 < 0:
-#             self.theta1 = 1
-#         else:
-#             self.theta1 = theta1
-#         print("cos t2\t{} \tt2 {:.0f} \t t1 {:.3f}".format(
-#             "!", self.theta2, self.theta1))
-#         return {"a1": self.theta1}
-#
-#     def extend_arm(self, length):
-#         L3init = self.get_L3()
-#         L3new = L3init + length
-#         if L3new < L3init and self.theta1 >= 179:
-#             theta2 = self.get_T2_from_L3(L3new)
-#             self.theta2 = self.validate_angle(theta2)
-#         else:
-#             T1primeinit = self.get_T1prime(L3init)
-#             if L3new >= self.L1 + self.L2:
-#                 L3new = (self.L1 + self.L2)*0.99
-#             theta2 = self.get_T2_from_L3(L3new)
-#             if theta2 > 180:
-#                 self.theta2 = 179
-#             elif theta2 < 0:
-#                 self.theta2 = 1
-#             else:
-#                 self.theta2 = theta2
-#             T1primenew = self.get_T1prime(L3new)
-#             self.theta1 = self.validate_angle(
-#                 self.theta1 - (T1primenew-T1primeinit))
-#         return{"a1": self.theta1, "a2": self.theta2}
-#
-#     def get_L3(self):
-#         L3squared = self.L1**2 + self.L2**2 - 2 * \
-#             self.L1*self.L2*m.cos(rad(self.theta2))
-#         return L3squared**0.5
-#
-#     def get_T2_from_L3(self, L3):
-#         cosT2 = (L3**2 - self.L1**2 - self.L2**2)/(-2*self.L1*self.L2)
-#         T2 = deg(m.acos(cosT2))
-#         return T2
-#
-#     def get_T1prime(self, L3):
-#         sinT1diff = self.L1/L3 * m.sin(rad(self.theta2))
-#         # might be self.l2 there instead...
-#         T1diff = deg(m.asin(abs(sinT1diff)))
-#         return self.theta1 - T1diff
-#
-#     def validate_angle(self, angle):
-#         if angle >= 180:
-#             angle = 179
-#         elif angle <= 0:
-#             angle = 1
-#         return angle
+def get_arm_speeds(interpreter_state, control_state):
+    """
+    control to command:
+    arm delta vertical = arm_horizontal * sensetivity
+    needs to get the previous interpreter state of the arm
+    """
+    if control_state["TOGL_ARM"]:
+        interpreter
+
 
 def update_interp_state(interpreter_state=interp, control_state=cont):
     wheel_update = get_wheel_speeds(interpreter_state, control_state)
