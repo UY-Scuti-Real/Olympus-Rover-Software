@@ -123,7 +123,7 @@ def get_arm_speeds(interpreter_state, control_state):
     needs to get the previous interpreter state of the arm
     """
     if control_state["TOGL_ARM"]:
-        interpreter
+        # interpreter_state.
 
 
 def update_interp_state(interpreter_state=interp, control_state=cont):

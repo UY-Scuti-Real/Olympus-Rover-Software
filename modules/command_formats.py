@@ -1,5 +1,35 @@
 #  message format module
 
+arm_null_map = {"a1": 0,
+                "a2": 0,
+                "a3": 0,
+                "a4": 0,
+                "A1": 0,
+                "A2": 0,
+                "A3": 0,
+                "A4": 0,
+                }
+
+
+command_map = {'ABS_Y':      'DRV_FWD',
+               'ABS_X':      'DRV_TURN',
+               'ABS_Z':      'U',
+               'BTN_THUMBL': 'U',  # left stick
+               'BTN_TL':     'U',
+               'BTN_TR':     'TOGL_ARM',  # bumpers
+               'ABS_HAT0X':  'U',
+               'ABS_HAT0Y':  'TOGL_MSC',  # dpad
+               'BTN_START':  'U',
+               'BTN_SELECT': 'U',  # selectors
+               'ABS_RY':     'ARM_VERT',
+               'ABS_RX':     'ARM_HORI',
+               'ABS_RZ':     'SET_SENS',
+               'BTN_THUMBR': 'U',  # right stick
+               'BTN_WEST':   'TOGL_GRB',
+               'BTN_SOUTH':  'YEET',
+               'BTN_EAST':   'TOGL_DMP',
+               'BTN_NORTH':  'TOGL_DRV'  # buttons
+               }
 
 class cmd_filter:
     """
@@ -156,22 +186,6 @@ def get_valid_cmds(string_message,
     return valid_cmds
 
 
-command_map = {'ABS_Y':      'DRV_FWD',
-               'ABS_X':      'DRV_TURN',
-               'ABS_Z':      'U',
-               'BTN_THUMBL': 'U',  # left stick
-               'BTN_TL':     'U',
-               'BTN_TR':     'TOGL_ARM',  # bumpers
-               'ABS_HAT0X':  'U',
-               'ABS_HAT0Y':  'TOGL_MSC',  # dpad
-               'BTN_START':  'U',
-               'BTN_SELECT': 'U',  # selectors
-               'ABS_RY':     'ARM_VERT',
-               'ABS_RX':     'ARM_HORI',
-               'ABS_RZ':     'SET_SENS',
-               'BTN_THUMBR': 'U',  # right stick
-               'BTN_WEST':   'TOGL_GRB',
-               'BTN_SOUTH':  'YEET',
-               'BTN_EAST':   'TOGL_DMP',
-               'BTN_NORTH':  'TOGL_DRV'  # buttons
-               }
+def get_null_map(desired_null):
+    if desired_null == "arm":
+        return arm_null_map
