@@ -60,6 +60,7 @@ def get_method():
     # second try is pigpio
     try:
         import pigpio
+        global pigpio
         controller = pigpio.pi()
     except (NotImplementedError, ImportError):
         print("Failed to import/initiate pigpio. Setting to printmode")
@@ -108,6 +109,8 @@ class servo:
         self.channel = int(channel)
         self.min_pulse = min_pulse
         self.max_pulse = max_pulse
+        if MODE["controller"] == "PIGPIO":
+            controller.set_mode(channel, pigpio.OUTPUT)
 
     def __call__(self, val):
         raise NotImplementedError
@@ -146,7 +149,7 @@ class standard_servo(servo):
     def __call__(self, angle):
         # print(self.channel, type(self.channel))
         if 0 <= angle <= 180:
-            kit.servo[self.channel].angle = angle
+            set_servo_to(self.channel, angle, "standard_servo")
         else:
             pass
 
@@ -158,24 +161,7 @@ class angle_memory_servo(standard_servo):
         angle_change = rotation_rate * socket_timeout * time_base
         if 0 <= self.angle + angle_change <= 180:
             self.angle += angle_change
-            super().__call__(self.angle)
-
-
-class pwm_servo(servo):
-    def __init__(self, GPIO_pin, min_pulse=500, max_pulse=2500):
-        # super(standard_servo, self).__init__(channel, min_pulse, max_pulse)
-        super().__init__(GPIO_pin, min_pulse, max_pulse)
-        # GPIO.setup(GPIO_pin, GPIO.OUT)
-        pwm_control.set_mode(GPIO_pin, pigpio.OUTPUT)
-
-    def __call__(self, angle, max_angle=180):
-        fraction_angle = angle/max_angle
-        angle_pulse = (self.max_pulse - self.min_pulse) * \
-            fraction_angle + self.min_pulse
-        if 0 <= fraction_angle <= 1:
-            pwm_control.set_servo_pulsewidth(self.channel, angle_pulse)
-        else:
-            pass
+            super()(self.angle)
 
 
 def update(speeds):
@@ -183,9 +169,9 @@ def update(speeds):
         print("\n")
     if speeds is not None:
         for speed in speeds:
-            if speed in mode_map:
+            if speed in electronics_map:
                 try:
-                    mode_map[speed](float(speeds[speed]))
+                    electronics_map[speed](float(speeds[speed]))
                 except Exception as e:
                     print("bill nye meme", e, speed)
 
@@ -274,7 +260,6 @@ null_map = {"w1": 0,
 print("Starting driver")
 command_server = network_module.make_server(5000, '192.168.1.10')
 command_server.get_connection()
-mode_map = get_map_from_mode(MODE)
 while 1:
     string_messages = command_server.get_messages()
     cmd_dict = command_formats.get_valid_cmds(string_messages)
