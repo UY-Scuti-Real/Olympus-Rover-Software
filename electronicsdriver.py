@@ -1,31 +1,6 @@
 # Driver
 from modules import network_module
 from modules import command_formats
-# MODE ========================================================================
-MODE = [0]
-socket_timeout = 2
-time_base = 1
-try:
-    import pigpio
-    pwm_control = pigpio.pi()
-    MODE = [2]
-    print("connected to pigpio")
-    import RPi.GPIO as GPIO
-    GPIO.setmode(GPIO.BCM)
-    MODE = [2]
-
-except (NotImplementedError, ImportError):
-    print("unable to connect to pigpio")
-
-try:
-    from adafruit_servokit import ServoKit
-    kit = ServoKit(channels=16)
-    MODE = [1]
-except (NotImplementedError, ImportError):
-    print("unable to access PWM control board")
-
-
-# =============================================================================
 """
 rover standards
 
@@ -57,6 +32,75 @@ an, you know the dril it's the same as before
 if the rover has debug LEDs/sounds, should be presented as
 on, output number respectively
 """
+# MODE ========================================================================
+MODE = {}
+socket_timeout = 2
+time_base = 1
+
+
+def get_method():
+    controller = None
+    # zeroth try is GPIO
+    try:
+        import RPi.GPIO as GPIO
+        GPIO.setmode(GPIO.BCM)
+    except (NotImplementedError, ImportError):
+        print("Can't contact GPIO, going straight to print")
+        MODE["controller"] = "PRINT"
+        return controller
+    # first try is kit
+    try:
+        from adafruit_servokit import ServoKit
+        controller = ServoKit(channels=16)
+    except (NotImplementedError, ImportError):
+        print("Failed to import/initiate servokit. Trying Pigpio")
+    else:
+        MODE["controller"] = "KIT"
+        return controller
+    # second try is pigpio
+    try:
+        import pigpio
+        controller = pigpio.pi()
+    except (NotImplementedError, ImportError):
+        print("Failed to import/initiate pigpio. Setting to printmode")
+    else:
+        MODE["controller"] = "PIGPIO"
+        return controller
+    # if those two both failed...
+    MODE["controller"] = "PRINT"
+    return controller
+
+
+controller = get_method()
+# =============================================================================
+
+
+def set_servo_to(channel, value_to_set, type, pwm_config=[500, 2500]):
+    # alternative methodology: function that makes the function:
+    # "set_servo_to" built by "get_method()" based on MODE...
+    # this will do for proof of concept
+    if "KIT" in MODE and type == "continous_servo":
+        # requires throttle -1 <= value_to_set <= 1
+        controller.continous_servo[channel].throttle = value_to_set
+    elif "KIT" in MODE and type == "standard_servo":
+        # requires angle 0 <= value_to_set <= 180
+        controller.servo[channel].angle = value_to_set
+    elif "PIGPIO" in MODE and type == "continous_servo":
+        # requires pulse width 500 <= value_to_set <= 2500
+        # convert from fraction to pulse width
+        value_to_set = value_to_set * \
+            (pwm_config[1]-pwm_config[0]) + pwm_config[0]
+        controller.set_servo_pulsewidth(channel, value_to_set)
+    elif "PIGPIO" in MODE and type == "standard_servo":
+        # requires pulse width 500 <= value_to_set <= 2500
+        # convert to fraction from angle
+        value_to_set = (value_to_set - 90)/90
+        # convert from fraction to pulse width
+        value_to_set = value_to_set * \
+            (pwm_config[1]-pwm_config[0]) + pwm_config[0]
+        controller.set_servo_pulsewidth(channel, value_to_set)
+    elif "PRINT" in MODE:
+        print("CHNL: {}\tVALU: {}".format(channel, value_to_set))
 
 
 class servo:
@@ -66,11 +110,15 @@ class servo:
         self.max_pulse = max_pulse
 
     def __call__(self, val):
-        pass
+        raise NotImplementedError
 
     def calibrate(self):
-        kit.servo[self.channel].set_pulse_width_range(self.min_pulse,
-                                                      self.max_pulse)
+        if MODE["controller"] != "KIT":
+            return 0
+        else:
+            controller.servo[self.channel].\
+                set_pulse_width_range(self.min_pulse,
+                                      self.max_pulse)
 
 
 class continous_servo(servo):
@@ -83,10 +131,9 @@ class continous_servo(servo):
 
     def __call__(self, throttle):
         if -1 <= throttle <= 1:
-            kit.continuous_servo[self.channel].throttle = throttle
+            set_servo_to(self.channel, throttle, "continous_servo")
         else:
             pass
-
 
 
 class standard_servo(servo):
@@ -105,23 +152,21 @@ class standard_servo(servo):
 
 
 class angle_memory_servo(standard_servo):
-    self.angle = 0
-    def __call__(self, rotation_rate_fraction):
-        angle_change = rotation_rate_fraction * socket_timeout * time_base
+    angle = 0
+
+    def __call__(self, rotation_rate):
+        angle_change = rotation_rate * socket_timeout * time_base
         if 0 <= self.angle + angle_change <= 180:
             self.angle += angle_change
             super().__call__(self.angle)
-
 
 
 class pwm_servo(servo):
     def __init__(self, GPIO_pin, min_pulse=500, max_pulse=2500):
         # super(standard_servo, self).__init__(channel, min_pulse, max_pulse)
         super().__init__(GPIO_pin, min_pulse, max_pulse)
-        GPIO.setup(GPIO_pin, GPIO.OUT)
+        # GPIO.setup(GPIO_pin, GPIO.OUT)
         pwm_control.set_mode(GPIO_pin, pigpio.OUTPUT)
-##        self.p = GPIO.PWM(GPIO_pin, 50)
-##        self.p.start(2.5)
 
     def __call__(self, angle, max_angle=180):
         fraction_angle = angle/max_angle
@@ -129,25 +174,8 @@ class pwm_servo(servo):
             fraction_angle + self.min_pulse
         if 0 <= fraction_angle <= 1:
             pwm_control.set_servo_pulsewidth(self.channel, angle_pulse)
-##            self.p.ChangeDutyCycle(angle/10 + 2.5)
         else:
             pass
-
-
-class pwm_servo_wheel(pwm_servo):
-
-    def __call__(self, angle, max_angle=180):
-        angle = angle*90 + 90
-        super().__call__(angle, max_angle)
-
-
-def get_map_from_mode(mode):
-    if 0 in mode:
-        return print_map
-    elif 1 in mode:
-        return electronics_map
-    elif 2 in mode:
-        return pwm_map
 
 
 def update(speeds):
@@ -191,20 +219,6 @@ grabber = standard_servo(12)
 waist = standard_servo(13)
 cargo = standard_servo(14)
 
-# pwm declarations (only used as backup)
-#pwm_wheel1 = pwm_servo(0)
-#pwm_wheel2 = pwm_servo(1)
-pwm_wheel3 = pwm_servo_wheel(2)
-pwm_wheel4 = pwm_servo_wheel(3)
-pwm_wheel5 = pwm_servo_wheel(4)
-pwm_wheel6 = pwm_servo_wheel(5)
-pwm_gimbal1 = pwm_servo(6)
-pwm_gimbal2 = pwm_servo(7)
-pwm_gimbal3 = pwm_servo(8)
-pwm_gimbal4 = pwm_servo(9)
-pwm_shoulder = pwm_servo(10)
-pwm_elbow = pwm_servo(11)
-pwm_grabber = pwm_servo(12)
 
 print_map = {"w1": debug_print,
              "w2": debug_print,
@@ -223,22 +237,6 @@ print_map = {"w1": debug_print,
              "p4": debug_print,
              }
 
-pwm_map = {"w1": debug_null,
-           "w2": debug_null,
-           "w3": pwm_wheel3,
-           "w4": pwm_wheel4,
-           "w5": pwm_wheel5,
-           "w6": pwm_wheel6,
-           "g1": pwm_gimbal1,
-           "g2": pwm_gimbal2,
-           "g3": pwm_gimbal3,
-           "g4": pwm_gimbal4,
-           "a1": pwm_shoulder,
-           "a2": pwm_elbow,
-           "a3": pwm_grabber,
-           "a4": debug_null,
-           "p4": debug_null,
-           }
 
 electronics_map = {"w1": wheel1,
                    "w2": wheel2,
