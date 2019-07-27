@@ -193,8 +193,8 @@ class controller_state:
         self.status = {
             "DRV_FWD": 0,
             "DRV_TURN": 0,
-            "ARM_VERT": 0,
-            "ARM_HORI": 0,
+            "ARM_VERT": 180,
+            "ARM_HORI": 90,
             }
         self.sensitivity_fudge = 0.75
         self.drive_mode = True
