@@ -122,8 +122,18 @@ def get_arm_speeds(interpreter_state, control_state):
     arm delta vertical = arm_horizontal * sensetivity
     needs to get the previous interpreter state of the arm
     """
-    if control_state["TOGL_ARM"]:
-        # interpreter_state.
+    if control_state["TOGL_MSC"]["ARM"]:
+        if control_state["TOGL_ARM"]:
+            interpreter_state["A1"] = control_state["ARM_VERT"]
+        else:
+            interpreter_state["A2"] = control_state["ARM_VERT"]
+    else:
+        interpreter_state["a1"] = "KILL"
+        interpreter_state["a2"] = "KILL"
+        interpreter_state["a3"] = "KILL"
+        interpreter_state["a4"] = "KILL"
+
+def input_toggler(interpreter_state, control_state)
 
 
 def update_interp_state(interpreter_state=interp, control_state=cont):
@@ -165,10 +175,12 @@ if 'localhost' in MODE:
     timeout = 0.5
 elif 'wifi' in MODE:
     address = '192.168.1.11'
-    timeout = 5e-3
+    # timeout = 5e-3
+    timeout = 5
 elif 'ethernet' in MODE:
     address = '192.168.1.10'
-    timeout = 5e-3
+    # timeout = 5e-3
+    timeout = 5
 
 print("MODE options: ", *MODE)
 print("creating sockets & classes... ", end='')

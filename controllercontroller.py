@@ -57,7 +57,7 @@ command_map = {'ABS_Y': 'DRV_FWD',
                'BTN_TL': 'U',
                'BTN_TR': 'TOGL_ARM',  # bumpers
                'ABS_HAT0X': 'U',
-               'ABS_HAT0Y': 'TOGL_MSC',  # dpad
+               'ABS_HAT0Y': 'TOGL_MSC',  # dpad #-1 deploy arm
                'BTN_START': 'U',
                'BTN_SELECT': 'U',  # selectors
                'ABS_RY': 'ARM_VERT',
