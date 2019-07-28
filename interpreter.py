@@ -122,28 +122,38 @@ def get_arm_speeds(interpreter_state, control_state):
     arm delta vertical = arm_horizontal * sensetivity
     needs to get the previous interpreter state of the arm
     """
-    if control_state["TOGL_MSC"]["ARM"]:
+    if control_state["DEPL_ARM"]:
         if control_state["TOGL_ARM"]:
-            interpreter_state["A1"] = control_state["ARM_VERT"]
+            interpreter_state["A1"] = control_state["ARM_VERT"]*control_state["SET_SENS"]
         else:
-            interpreter_state["A2"] = control_state["ARM_VERT"]
-    else:
+            interpreter_state["A2"] = control_state["ARM_VERT"]*control_state["SET_SENS"]
+    elif not control_state["DEPL_ARM"]:
         interpreter_state["a1"] = "KILL"
         interpreter_state["a2"] = "KILL"
         interpreter_state["a3"] = "KILL"
         interpreter_state["a4"] = "KILL"
 
-def input_toggler(interpreter_state, control_state)
+def input_toggler(interpreter_state, control_state):
+    if control_statep["TOGL_MSC"] == -1:
+        pass
+    elif control_state["TOGL_MSC"] == 1:
+        pass
+    elif control_state["TOGL_MSC"] == 0:
+        pass
+    if control_state["TOGL_DM1"] and control_state["TOGL_DM2"]:
+        interpreter_state["p1"] = 0
+    else:
+        interpreter_state["p1"] = 110
 
 
-def update_interp_state(interpreter_state=interp, control_state=cont):
+def update_interp_state(interpreter_state, control_state):
     wheel_update = get_wheel_speeds(interpreter_state, control_state)
     arm_update = get_arm_speeds(interpreter_state, control_state)
     interpreter_state.update()
 
 
-def update_command_state(dict_msg, control_state=cont):
-    control_state.update(control_state)
+def update_command_state(dict_msg, control_state):
+    control_state.update(dict_msg)
 
 
 def debug_null(*args):
@@ -171,14 +181,14 @@ MODE = ["DBW", "ethernet", 'sendall']
 # MODE = [1]
 
 if 'localhost' in MODE:
-    address = gethostname()
+    address = "127.0.0.1"
     timeout = 0.5
 elif 'wifi' in MODE:
-    address = '192.168.1.11'
+    address = '0.0.0.0'
     # timeout = 5e-3
     timeout = 5
 elif 'ethernet' in MODE:
-    address = '192.168.1.10'
+    address = '0.0.0.0'
     # timeout = 5e-3
     timeout = 5
 

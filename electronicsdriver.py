@@ -113,7 +113,8 @@ class servo:
             controller.set_mode(channel, pigpio.OUTPUT)
 
     def __call__(self, val):
-        raise NotImplementedError
+        if val == "KILL":
+            return 0
 
     def calibrate(self):
         if MODE["controller"] != "KIT":
@@ -133,6 +134,7 @@ class continous_servo(servo):
             self.calibrate()
 
     def __call__(self, throttle):
+        super().__call__(throttle)
         if -1 <= throttle <= 1:
             set_servo_to(self.channel, throttle, "continous_servo")
         else:
@@ -148,6 +150,7 @@ class standard_servo(servo):
 
     def __call__(self, angle):
         # print(self.channel, type(self.channel))
+        super().__call__(angle)
         if 0 <= angle <= 180:
             set_servo_to(self.channel, angle, "standard_servo")
         else:
@@ -258,7 +261,8 @@ null_map = {"w1": 0,
 
 
 print("Starting driver")
-command_server = network_module.make_server(5000, '192.168.1.10')
+update(null_map)
+command_server = network_module.make_server(5000, '0.0.0.0')
 command_server.get_connection()
 while 1:
     string_messages = command_server.get_messages()
